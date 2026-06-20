@@ -1,126 +1,315 @@
-{\rtf1\ansi\ansicpg949\cocoartf2822
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\paperw11900\paperh16840\margl1440\margr1440\vieww33100\viewh17600\viewkind0
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>쇼트트랙 기록 관리 대시보드</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #3b82f6;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
 
-\f0\fs24 \cf0 <!DOCTYPE html>\
-<html lang="ko">\
-<head>\
-    <meta charset="UTF-8">\
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">\
-    <title>\uc0\u49660 \u53944 \u53944 \u47001  \u44592 \u47197  \u44288 \u47532  \u45824 \u49884 \u48372 \u46300 </title>\
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>\
-    <style>\
-        :root \{\
-            --primary-color: #1a365d;\
-            --secondary-color: #2b6cb0;\
-            --accent-color: #319795;\
-            --bg-color: #f7fafc;\
-            --card-bg: #ffffff;\
-            --text-color: #2d3748;\
-            --border-color: #e2e8f0;\
-        \}\
-\
-        * \{\
-            box-sizing: border-box;\
-            margin: 0;\
-            padding: 0;\
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;\
-        \}\
-\
-        body \{\
-            background-color: var(--bg-color);\
-            color: var(--text-color);\
-            line-height: 1.6;\
-            padding: 20px;\
-        \}\
-\
-        .container \{\
-            max-width: 1000px;\
-            margin: 0 auto;\
-        \}\
-\
-        header \{\
-            text-align: center;\
-            padding: 30px 0;\
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));\
-            color: white;\
-            border-radius: 12px;\
-            margin-bottom: 25px;\
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\
-        \}\
-\
-        header h1 \{\
-            font-size: 24px;\
-            margin-bottom: 8px;\
-        \}\
-\
-        header p \{\
-            font-size: 14px;\
-            opacity: 0.9;\
-        \}\
-\
-        /* \uc0\u47700 \u51064  \u50836 \u50557  \u52852 \u46300  (\u44060 \u51064  \u52572 \u44256  \u44592 \u47197 ) */\
-        .pb-container \{\
-            display: grid;\
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\
-            gap: 15px;\
-            margin-bottom: 25px;\
-        \}\
-\
-        .pb-card \{\
-            background: var(--card-bg);\
-            padding: 20px;\
-            border-radius: 10px;\
-            text-align: center;\
-            border-left: 5px solid var(--accent-color);\
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);\
-        \}\
-\
-        .pb-card h3 \{\
-            font-size: 14px;\
-            color: #718096;\
-            margin-bottom: 5px;\
-        \}\
-\
-        .pb-card .time \{\
-            font-size: 28px;\
-            font-weight: bold;\
-            color: var(--primary-color);\
-        \}\
-\
-        /* \uc0\u52264 \u53944  \u50689 \u50669  */\
-        .chart-section \{\
-            background: var(--card-bg);\
-            padding: 20px;\
-            border-radius: 12px;\
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);\
-            margin-bottom: 25px;\
-        \}\
-\
-        .chart-section h2 \{\
-            font-size: 18px;\
-            margin-bottom: 15px;\
-            color: var(--primary-color);\
-        \}\
-\
-        /* \uc0\u53580 \u51060 \u48660  \u50689 \u50669  */\
-        .table-section \{\
-            background: var(--card-bg);\
-            border-radius: 12px;\
-            overflow: hidden;\
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);\
-        \}\
-\
-        .table-wrapper \{\
-            overflow-x: auto;\
-        \}\
-\
-        table \{\
-            width: 100%;\
-            border-collapse: collapse;\
-            text-align: left;\
-            font-size: 14px;\
-        \}}
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        header {
+            text-align: center;
+            padding: 24px 0;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        header p {
+            margin: 4px 0 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: var(--primary-color);
+            border-left: 4px solid var(--secondary-color);
+            padding-left: 8px;
+        }
+
+        .pb-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .pb-item {
+            text-align: center;
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 12px;
+        }
+
+        .pb-distance {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .pb-time {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-top: 4px;
+        }
+
+        .record-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .record-item:last-child {
+            border-bottom: none;
+        }
+
+        .record-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .record-date {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .record-type {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .record-value {
+            font-weight: bold;
+            font-size: 1.05rem;
+            color: var(--text-main);
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-muted);
+        }
+
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.2s;
+        }
+
+        .btn-submit:hover {
+            background-color: var(--primary-color);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 220px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>쇼트트랙 선수 기록실 ⛸️</h1>
+        <p>오늘의 노력이 내일의 금메달로</p>
+    </header>
+
+    <div class="card">
+        <div class="card-title">개인 최고 기록 (PB)</div>
+        <div class="pb-grid">
+            <div class="pb-item">
+                <div class="pb-distance">500m</div>
+                <div class="pb-time">42.50</div>
+            </div>
+            <div class="pb-item">
+                <div class="pb-distance">1000m</div>
+                <div class="pb-time">1:25.10</div>
+            </div>
+            <div class="pb-item">
+                <div class="pb-distance">1500m</div>
+                <div class="pb-time">2:12.45</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">기록 추이 (500m 기준)</div>
+        <div class="chart-container">
+            <canvas id="recordChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">최근 측정 기록</div>
+        <ul class="record-list">
+            <li class="record-item">
+                <div class="record-info">
+                    <span class="record-type">500m</span>
+                    <span class="record-date">2026.06.20 · 오전 훈련</span>
+                </div>
+                <div class="record-value">42.50초 (PB)</div>
+            </li>
+            <li class="record-item">
+                <div class="record-info">
+                    <span class="record-type">1500m</span>
+                    <span class="record-date">2026.06.18 · 지상/빙상</span>
+                </div>
+                <div class="record-value">2:14.20</div>
+            </li>
+            <li class="record-item">
+                <div class="record-info">
+                    <span class="record-type">1000m</span>
+                    <span class="record-date">2026.06.15 · 자체 측정</span>
+                </div>
+                <div class="record-value">1:25.10초</div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <div class="card-title">새 기록 등록하기</div>
+        <form id="recordForm" onsubmit="event.preventDefault(); alert('기록이 입력되었습니다! (샘플 화면입니다)');">
+            <div class="form-group">
+                <label for="distance">종목 선택</label>
+                <select id="distance">
+                    <option value="500">500m</option>
+                    <option value="1000">1000m</option>
+                    <option value="1500">1500m</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="time">기록 입력 (예: 42.50 또는 1:25.10)</label>
+                <input type="text" id="time" placeholder="00.00 또는 0:00.00" required>
+            </div>
+            <div class="form-group">
+                <label for="date">측정 날짜</label>
+                <input type="date" id="date" required>
+            </div>
+            <button type="submit" class="btn-submit">기록 저장</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('date').value = new Date().toISOString().substring(0, 10);
+
+    const ctx = document.getElementById('recordChart').getContext('2d');
+    const recordChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['5/10', '5/25', '6/05', '6/15', '6/20'],
+            datasets: [{
+                label: '500m 기록 (초)',
+                data: [44.10, 43.80, 43.20, 42.90, 42.50],
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 3,
+                tension: 0.3,
+                fill: true,
+                pointRadius: 4,
+                pointBackgroundColor: '#1e3a8a'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    reverse: true,
+                    grid: {
+                        color: '#f1f5f9'
+                    },
+                    ticks: {
+                        font: { size: 11 }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: { size: 11 }
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
