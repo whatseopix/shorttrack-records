@@ -149,9 +149,7 @@
                 return;
             }
 
-            // 테이블 표시용 원본 데이터 (시트에 입력한 최신 순서 그대로 유지하기 위해 복사본 생성)
             const tableRows = [...rows];
-
             const tableBody = document.getElementById('tableBody');
             tableBody.innerHTML = '';
             
@@ -161,7 +159,6 @@
             let best333Str = '-';
             let best500Str = '-';
 
-            // 그래프용 데이터 분리 보관함
             let dataset333 = [];
             let dataset500 = [];
 
@@ -176,7 +173,6 @@
                 
                 const sec = timeToSeconds(record);
                 
-                // 1. 최소값(낮은 게 최고 기록) 로직으로 PB 판정 및 그래프 데이터 수집
                 if (eventType.includes('333')) {
                     if (sec && sec < best333) { best333 = sec; best333Str = record; }
                     if (sec) dataset333.push({ date: date, sec: sec });
@@ -186,7 +182,7 @@
                 }
             });
 
-            // 테이블 뷰 렌더링 (입력 순서 유지)
+            // 테이블 렌더링
             tableRows.forEach(row => {
                 const [date, tournament, venueLink, eventType, record, rank, note] = row;
                 let rankHtml = rank || '-';
@@ -204,11 +200,12 @@
                 tableBody.appendChild(tr);
             });
 
+            // 상단 카드에 정확히 연동 (가장 낮은 숫자의 스트링 기록 반영)
             document.getElementById('pb333').innerText = best333Str;
             document.getElementById('pb500').innerText = best500Str;
             document.getElementById('totalRaces').innerText = totalCount + '회';
 
-            // 2. 그래프용 데이터를 날짜 기준 오름차순(빠른 날짜가 왼쪽으로) 정렬
+            // 그래프 날짜 정렬 (빠른 날짜가 왼쪽으로)
             dataset333.sort((a, b) => new Date(a.date) - new Date(b.date));
             dataset500.sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -218,7 +215,6 @@
             const labels500 = dataset500.map(d => d.date);
             const values500 = dataset500.map(d => d.sec);
 
-            // 최종 그래프 그리기
             renderChart('chart333', labels333, values333, '333m 기록 (초)', '#dd6b20', 'rgba(221, 107, 32, 0.1)', 'chart333Obj');
             renderChart('chart500', labels500, values500, '500m 기록 (초)', '#319795', 'rgba(49, 151, 149, 0.1)', 'chart500Obj');
 
@@ -251,9 +247,7 @@
             options: {
                 responsive: true,
                 scales: {
-                    y: { 
-                        ticks: { callback: value => value + '초' }
-                    }
+                    y: { ticks: { callback: value => value + '초' } }
                 }
             }
         });
