@@ -7,308 +7,220 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --primary-color: #1e3a8a;
-            --secondary-color: #3b82f6;
-            --bg-color: #f8fafc;
+            --primary-color: #1a365d;
+            --secondary-color: #2b6cb0;
+            --accent-color: #319795;
+            --bg-color: #f7fafc;
             --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
+            --text-color: #2d3748;
+            --border-color: #e2e8f0;
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 0;
-            -webkit-font-smoothing: antialiased;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        header { text-align: center; padding: 30px 0; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; border-radius: 12px; margin-bottom: 25px; }
+        header h1 { font-size: 24px; margin-bottom: 8px; }
+        
+        .pb-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .pb-card { background: var(--card-bg); padding: 20px; border-radius: 10px; text-align: center; border-left: 5px solid var(--accent-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .pb-card h3 { font-size: 14px; color: #718096; margin-bottom: 5px; }
+        .pb-card .time { font-size: 24px; font-weight: bold; color: var(--primary-color); }
 
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 16px;
-        }
-
-        header {
-            text-align: center;
-            padding: 24px 0;
-        }
-
-        header h1 {
-            margin: 0;
-            font-size: 1.5rem;
-            color: var(--primary-color);
-        }
-
-        header p {
-            margin: 4px 0 0;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        }
-
-        .card-title {
-            font-size: 1.1rem;
-            font-weight: bold;
-            margin-top: 0;
-            margin-bottom: 16px;
-            color: var(--primary-color);
-            border-left: 4px solid var(--secondary-color);
-            padding-left: 8px;
-        }
-
-        .pb-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-        }
-
-        .pb-item {
-            text-align: center;
-            background: #f1f5f9;
-            padding: 12px;
-            border-radius: 12px;
-        }
-
-        .pb-distance {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-
-        .pb-time {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: var(--primary-color);
-            margin-top: 4px;
-        }
-
-        .record-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .record-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .record-item:last-child {
-            border-bottom: none;
-        }
-
-        .record-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .record-date {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
-
-        .record-type {
-            font-weight: 600;
-            font-size: 0.95rem;
-        }
-
-        .record-value {
-            font-weight: bold;
-            font-size: 1.05rem;
-            color: var(--text-main);
-        }
-
-        .form-group {
-            margin-bottom: 12px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 4px;
-            color: var(--text-muted);
-        }
-
-        .form-group select, .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 1rem;
-        }
-
-        .btn-submit {
-            width: 100%;
-            background-color: var(--secondary-color);
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 8px;
-            transition: background 0.2s;
-        }
-
-        .btn-submit:hover {
-            background-color: var(--primary-color);
-        }
-
-        .chart-container {
-            position: relative;
-            height: 220px;
-            width: 100%;
-        }
+        .chart-section { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .chart-section h2 { font-size: 18px; margin-bottom: 15px; color: var(--primary-color); }
+        
+        .table-section { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); }
+        th { background-color: #edf2f7; color: var(--primary-color); }
+        tr:hover { background-color: #f8fafc; }
+        
+        .rank-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .rank-1 { background-color: #feebc8; color: #c05621; }
+        .rank-2 { background-color: #e2e8f0; color: #4a5568; }
+        .rank-3 { background-color: #feeedc; color: #dd6b20; }
+        footer { text-align: center; margin-top: 40px; font-size: 12px; color: #a0aec0; }
+        .loading { text-align: center; padding: 20px; font-weight: bold; color: var(--secondary-color); }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>쇼트트랙 선수 기록실 ⛸️</h1>
-        <p>오늘의 노력이 내일의 금메달로</p>
+        <h1>아들의 쇼트트랙 기록실 ⛸️</h1>
+        <p>구글 시트 데이터를 실시간으로 동기화하는 대시보드입니다.</p>
     </header>
 
-    <div class="card">
-        <div class="card-title">개인 최고 기록 (PB)</div>
-        <div class="pb-grid">
-            <div class="pb-item">
-                <div class="pb-distance">500m</div>
-                <div class="pb-time">42.50</div>
-            </div>
-            <div class="pb-item">
-                <div class="pb-distance">1000m</div>
-                <div class="pb-time">1:25.10</div>
-            </div>
-            <div class="pb-item">
-                <div class="pb-distance">1500m</div>
-                <div class="pb-time">2:12.45</div>
-            </div>
+    <div class="pb-container">
+        <div class="pb-card">
+            <h3>500m 최고 기록</h3>
+            <div class="time" id="pb500">-</div>
+        </div>
+        <div class="pb-card">
+            <h3>1000m 최고 기록</h3>
+            <div class="time" id="pb1000">-</div>
+        </div>
+        <div class="pb-card">
+            <h3>총 출전 대회 수</h3>
+            <div class="time" id="totalRaces" style="color: var(--accent-color);">-</div>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-title">기록 추이 (500m 기준)</div>
-        <div class="chart-container">
-            <canvas id="recordChart"></canvas>
+    <div class="chart-section">
+        <h2>500m 기록 추이 변화</h2>
+        <canvas id="recordChart" height="100"></canvas>
+    </div>
+
+    <div class="table-section">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>날짜</th>
+                        <th>대회명</th>
+                        <th>종목</th>
+                        <th>기록</th>
+                        <th>순위</th>
+                        <th>비고</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="6" class="loading">구글 시트에서 데이터를 불러오는 중입니다...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-title">최근 측정 기록</div>
-        <ul class="record-list">
-            <li class="record-item">
-                <div class="record-info">
-                    <span class="record-type">500m</span>
-                    <span class="record-date">2026.06.20 · 오전 훈련</span>
-                </div>
-                <div class="record-value">42.50초 (PB)</div>
-            </li>
-            <li class="record-item">
-                <div class="record-info">
-                    <span class="record-type">1500m</span>
-                    <span class="record-date">2026.06.18 · 지상/빙상</span>
-                </div>
-                <div class="record-value">2:14.20</div>
-            </li>
-            <li class="record-item">
-                <div class="record-info">
-                    <span class="record-type">1000m</span>
-                    <span class="record-date">2026.06.15 · 자체 측정</span>
-                </div>
-                <div class="record-value">1:25.10초</div>
-            </li>
-        </ul>
-    </div>
-
-    <div class="card">
-        <div class="card-title">새 기록 등록하기</div>
-        <form id="recordForm" onsubmit="event.preventDefault(); alert('기록이 입력되었습니다! (샘플 화면입니다)');">
-            <div class="form-group">
-                <label for="distance">종목 선택</label>
-                <select id="distance">
-                    <option value="500">500m</option>
-                    <option value="1000">1000m</option>
-                    <option value="1500">1500m</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="time">기록 입력 (예: 42.50 또는 1:25.10)</label>
-                <input type="text" id="time" placeholder="00.00 또는 0:00.00" required>
-            </div>
-            <div class="form-group">
-                <label for="date">측정 날짜</label>
-                <input type="date" id="date" required>
-            </div>
-            <button type="submit" class="btn-submit">기록 저장</button>
-        </form>
-    </div>
+    <footer>
+        <p>© 쇼트트랙 기록 대시보드 프로젝트. 데이터 연동 완료.</p>
+    </footer>
 </div>
 
 <script>
-    document.getElementById('date').value = new Date().toISOString().substring(0, 10);
+    // 제공해주신 실제 구글 시트 웹 게시 CSV 주소입니다.
+    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSKW2Np5p8qrOwLlea_eIf16PM5vMeuW3WvC2KQ2TY-5vLBLKMHdkigI9mfEFHku3N_w6RbDV35r9wi/pub?gid=166948240&single=true&output=csv';
 
-    const ctx = document.getElementById('recordChart').getContext('2d');
-    const recordChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['5/10', '5/25', '6/05', '6/15', '6/20'],
-            datasets: [{
-                label: '500m 기록 (초)',
-                data: [44.10, 43.80, 43.20, 42.90, 42.50],
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                borderWidth: 3,
-                tension: 0.3,
-                fill: true,
-                pointRadius: 4,
-                pointBackgroundColor: '#1e3a8a'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
+    let myChart = null;
+
+    // CSV 데이터를 배열로 파싱하는 함수
+    function parseCSV(text) {
+        const lines = text.split('\n');
+        return lines.map(line => {
+            const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(',');
+            return matches.map(val => val.replace(/^"|"$/g, '').trim());
+        });
+    }
+
+    // 시간 문자열(예: "45.32", "1:32.15")을 초 단위 숫자로 바꾸는 함수
+    function timeToSeconds(timeStr) {
+        if (!timeStr) return null;
+        if (timeStr.includes(':')) {
+            const parts = timeStr.split(':');
+            return parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
+        }
+        return parseFloat(timeStr);
+    }
+
+    async function loadSheetData() {
+        try {
+            const response = await fetch(sheetUrl);
+            const csvText = await response.text();
+            const data = parseCSV(csvText);
+
+            // 첫 번째 줄(헤더) 제외하고 실제 데이터만 필터링
+            const rows = data.slice(1).filter(row => row.length > 0 && row[0] !== "");
+
+            if(rows.length === 0) {
+                document.getElementById('tableBody').innerHTML = '<tr><td colspan="6" style="text-align:center;">시트에 데이터가 없습니다. 기록을 입력해 주세요.</td></tr>';
+                return;
+            }
+
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            
+            let totalCount = rows.length;
+            let best500 = Infinity;
+            let best1000 = Infinity;
+            let best500Str = '-';
+            let best1000Str = '-';
+
+            let chartLabels = [];
+            let chartData = [];
+
+            rows.forEach(row => {
+                const [date, tournament, eventType, record, rank, note] = row;
+                
+                const sec = timeToSeconds(record);
+                if (eventType && eventType.includes('500')) {
+                    if (sec && sec < best500) { best500 = sec; best500Str = record; }
+                    chartLabels.push(date);
+                    chartData.push(sec);
+                } else if (eventType && eventType.includes('1000')) {
+                    if (sec && sec < best1000) { best1000 = sec; best1000Str = record; }
                 }
+
+                let rankHtml = rank || '-';
+                if (rank && rank.includes('1')) rankHtml = `<span class="rank-badge rank-1">${rank}</span>`;
+                else if (rank && rank.includes('2')) rankHtml = `<span class="rank-badge rank-2">${rank}</span>`;
+                else if (rank && rank.includes('3')) rankHtml = `<span class="rank-badge rank-3">${rank}</span>`;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${date || '-'}</td>
+                    <td>${tournament || '-'}</td>
+                    <td>${eventType || '-'}</td>
+                    <td><strong>${record || '-'}</strong></td>
+                    <td>${rankHtml}</td>
+                    <td>${note || ''}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+
+            document.getElementById('pb500').innerText = best500Str;
+            document.getElementById('pb1000').innerText = best1000Str;
+            document.getElementById('totalRaces').innerText = totalCount + '회';
+
+            // 그래프 그리기 (시간 축이 정방향으로 흐르도록 정렬)
+            renderChart(chartLabels.reverse(), chartData.reverse());
+
+        } catch (error) {
+            console.error('Error fetching sheet:', error);
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">구글 시트 연동 실패. 주소나 공유 설정을 확인해 주세요.</td></tr>';
+        }
+    }
+
+    function renderChart(labels, data) {
+        const ctx = document.getElementById('recordChart').getContext('2d');
+        if (myChart) myChart.destroy();
+        
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '500m 기록 (초단위)',
+                    data: data,
+                    borderColor: '#319795',
+                    backgroundColor: 'rgba(49, 151, 149, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.1,
+                    fill: true
+                }]
             },
-            scales: {
-                y: {
-                    reverse: true,
-                    grid: {
-                        color: '#f1f5f9'
-                    },
-                    ticks: {
-                        font: { size: 11 }
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        font: { size: 11 }
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        ticks: { callback: value => value + '초' }
                     }
                 }
             }
-        }
-    });
+        });
+    }
+
+    window.onload = loadSheetData;
 </script>
 
 </body>
