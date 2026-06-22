@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>쇼트트랙 기록 관리 대시보드</title>
+    <title>유찬이의 쇼트트랙 기록실 ⛸️</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary-color: #1a365d;
             --secondary-color: #2b6cb0;
             --accent-color: #319795;
+            --chart2-color: #dd6b20;
             --bg-color: #f7fafc;
             --card-bg: #ffffff;
             --text-color: #2d3748;
@@ -24,11 +25,16 @@
         
         .pb-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
         .pb-card { background: var(--card-bg); padding: 20px; border-radius: 10px; text-align: center; border-left: 5px solid var(--accent-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .pb-card.pb-333 { border-left-color: var(--chart2-color); }
         .pb-card h3 { font-size: 14px; color: #718096; margin-bottom: 5px; }
         .pb-card .time { font-size: 24px; font-weight: bold; color: var(--primary-color); }
 
-        .chart-section { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 25px; }
-        .chart-section h2 { font-size: 18px; margin-bottom: 15px; color: var(--primary-color); }
+        /* 차트 그리드 레이아웃 (PC에서는 가로로 2개 배치, 모바일은 세로) */
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        @media (max-width: 500px) { .charts-grid { grid-template-columns: 1fr; } }
+        
+        .chart-section { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .chart-section h2 { font-size: 16px; margin-bottom: 15px; color: var(--primary-color); text-align: center; }
         
         .table-section { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .table-wrapper { overflow-x: auto; }
@@ -43,24 +49,27 @@
         .rank-3 { background-color: #feeedc; color: #dd6b20; }
         footer { text-align: center; margin-top: 40px; font-size: 12px; color: #a0aec0; }
         .loading { text-align: center; padding: 20px; font-weight: bold; color: var(--secondary-color); }
+        
+        .venue-link { color: var(--secondary-color); text-decoration: none; font-weight: 500; }
+        .venue-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>아들의 쇼트트랙 기록실 ⛸️</h1>
+        <h1>유찬이의 쇼트트랙 기록실 ⛸️</h1>
         <p>구글 시트 데이터를 실시간으로 동기화하는 대시보드입니다.</p>
     </header>
 
     <div class="pb-container">
+        <div class="pb-card pb-333">
+            <h3>333m 최고 기록</h3>
+            <div class="time" id="pb333">-</div>
+        </div>
         <div class="pb-card">
             <h3>500m 최고 기록</h3>
             <div class="time" id="pb500">-</div>
-        </div>
-        <div class="pb-card">
-            <h3>1000m 최고 기록</h3>
-            <div class="time" id="pb1000">-</div>
         </div>
         <div class="pb-card">
             <h3>총 출전 대회 수</h3>
@@ -68,9 +77,15 @@
         </div>
     </div>
 
-    <div class="chart-section">
-        <h2>500m 기록 추이 변화</h2>
-        <canvas id="recordChart" height="100"></canvas>
+    <div class="charts-grid">
+        <div class="chart-section">
+            <h2>📈 333m 기록 추이 변화</h2>
+            <canvas id="chart333" height="180"></canvas>
+        </div>
+        <div class="chart-section">
+            <h2>📈 500m 기록 추이 변화</h2>
+            <canvas id="chart500" height="180"></canvas>
+        </div>
     </div>
 
     <div class="table-section">
@@ -80,6 +95,7 @@
                     <tr>
                         <th>날짜</th>
                         <th>대회명</th>
+                        <th>경기장(링크)</th>
                         <th>종목</th>
                         <th>기록</th>
                         <th>순위</th>
@@ -87,24 +103,23 @@
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="6" class="loading">구글 시트에서 데이터를 불러오는 중입니다...</td></tr>
+                    <tr><td colspan="7" class="loading">구글 시트에서 데이터를 불러오는 중입니다...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
     <footer>
-        <p>© 쇼트트랙 기록 대시보드 프로젝트. 데이터 연동 완료.</p>
+        <p>© 유찬이의 쇼트트랙 기록 대시보드 프로젝트.</p>
     </footer>
 </div>
 
 <script>
-    // 제공해주신 실제 구글 시트 웹 게시 CSV 주소입니다.
     const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSKW2Np5p8qrOwLlea_eIf16PM5vMeuW3WvC2KQ2TY-5vLBLKMHdkigI9mfEFHku3N_w6RbDV35r9wi/pub?gid=166948240&single=true&output=csv';
 
-    let myChart = null;
+    let chart333Obj = null;
+    let chart500Obj = null;
 
-    // CSV 데이터를 배열로 파싱하는 함수
     function parseCSV(text) {
         const lines = text.split('\n');
         return lines.map(line => {
@@ -113,7 +128,6 @@
         });
     }
 
-    // 시간 문자열(예: "45.32", "1:32.15")을 초 단위 숫자로 바꾸는 함수
     function timeToSeconds(timeStr) {
         if (!timeStr) return null;
         if (timeStr.includes(':')) {
@@ -129,11 +143,10 @@
             const csvText = await response.text();
             const data = parseCSV(csvText);
 
-            // 첫 번째 줄(헤더) 제외하고 실제 데이터만 필터링
             const rows = data.slice(1).filter(row => row.length > 0 && row[0] !== "");
 
             if(rows.length === 0) {
-                document.getElementById('tableBody').innerHTML = '<tr><td colspan="6" style="text-align:center;">시트에 데이터가 없습니다. 기록을 입력해 주세요.</td></tr>';
+                document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;">시트에 데이터가 없습니다. 기록을 입력해 주세요.</td></tr>';
                 return;
             }
 
@@ -141,24 +154,35 @@
             tableBody.innerHTML = '';
             
             let totalCount = rows.length;
+            let best333 = Infinity;
             let best500 = Infinity;
-            let best1000 = Infinity;
+            let best333Str = '-';
             let best500Str = '-';
-            let best1000Str = '-';
 
-            let chartLabels = [];
-            let chartData = [];
+            // 종목별 분리 데이터 저장 공간
+            let labels333 = [], data333 = [];
+            let labels500 = [], data500 = [];
 
             rows.forEach(row => {
-                const [date, tournament, eventType, record, rank, note] = row;
+                const date = row[0];
+                const tournament = row[1];
+                const venueLink = row[2];
+                const eventType = row[3] ? row[3].trim() : '';
+                const record = row[4];
+                const rank = row[5];
+                const note = row[6];
                 
                 const sec = timeToSeconds(record);
-                if (eventType && eventType.includes('500')) {
+                
+                // 333m와 500m 조건별 데이터 분리
+                if (eventType.includes('333')) {
+                    if (sec && sec < best333) { best333 = sec; best333Str = record; }
+                    labels333.push(date);
+                    data333.push(sec);
+                } else if (eventType.includes('500')) {
                     if (sec && sec < best500) { best500 = sec; best500Str = record; }
-                    chartLabels.push(date);
-                    chartData.push(sec);
-                } else if (eventType && eventType.includes('1000')) {
-                    if (sec && sec < best1000) { best1000 = sec; best1000Str = record; }
+                    labels500.push(date);
+                    data500.push(sec);
                 }
 
                 let rankHtml = rank || '-';
@@ -166,10 +190,16 @@
                 else if (rank && rank.includes('2')) rankHtml = `<span class="rank-badge rank-2">${rank}</span>`;
                 else if (rank && rank.includes('3')) rankHtml = `<span class="rank-badge rank-3">${rank}</span>`;
 
+                let venueHtml = venueLink || '-';
+                if (venueLink && (venueLink.startsWith('http://') || venueLink.startsWith('https://'))) {
+                    venueHtml = `<a href="${venueLink}" target="_blank" class="venue-link">🔗 경기장 보기</a>`;
+                }
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${date || '-'}</td>
                     <td>${tournament || '-'}</td>
+                    <td>${venueHtml}</td>
                     <td>${eventType || '-'}</td>
                     <td><strong>${record || '-'}</strong></td>
                     <td>${rankHtml}</td>
@@ -178,32 +208,36 @@
                 tableBody.appendChild(tr);
             });
 
+            document.getElementById('pb333').innerText = best333Str;
             document.getElementById('pb500').innerText = best500Str;
-            document.getElementById('pb1000').innerText = best1000Str;
             document.getElementById('totalRaces').innerText = totalCount + '회';
 
-            // 그래프 그리기 (시간 축이 정방향으로 흐르도록 정렬)
-            renderChart(chartLabels.reverse(), chartData.reverse());
+            // 양쪽 그래프 그리기 (시간 축이 정방향으로 흐르도록 순서 뒤집기)
+            renderChart('chart333', labels333.reverse(), data333.reverse(), '333m 기록 (초)', '#dd6b20', 'rgba(221, 107, 32, 0.1)', 'chart333Obj');
+            renderChart('chart500', labels500.reverse(), data500.reverse(), '500m 기록 (초)', '#319795', 'rgba(49, 151, 149, 0.1)', 'chart500Obj');
 
         } catch (error) {
             console.error('Error fetching sheet:', error);
-            document.getElementById('tableBody').innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">구글 시트 연동 실패. 주소나 공유 설정을 확인해 주세요.</td></tr>';
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" style="text-align:center; color:red;">구글 시트 연동 실패. 주소나 공유 설정을 확인해 주세요.</td></tr>';
         }
     }
 
-    function renderChart(labels, data) {
-        const ctx = document.getElementById('recordChart').getContext('2d');
-        if (myChart) myChart.destroy();
+    function renderChart(canvasId, labels, data, labelName, lineColor, bgColor, chartRef) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
         
-        myChart = new Chart(ctx, {
+        // 기존 객체 인스턴스 초기화
+        if (canvasId === 'chart333' && chart333Obj) chart333Obj.destroy();
+        if (canvasId === 'chart500' && chart500Obj) chart500Obj.destroy();
+        
+        const newChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: '500m 기록 (초단위)',
+                    label: labelName,
                     data: data,
-                    borderColor: '#319795',
-                    backgroundColor: 'rgba(49, 151, 149, 0.1)',
+                    borderColor: lineColor,
+                    backgroundColor: bgColor,
                     borderWidth: 3,
                     tension: 0.1,
                     fill: true
@@ -212,12 +246,13 @@
             options: {
                 responsive: true,
                 scales: {
-                    y: {
-                        ticks: { callback: value => value + '초' }
-                    }
+                    y: { ticks: { callback: value => value + '초' } }
                 }
             }
         });
+
+        if (canvasId === 'chart333') chart333Obj = newChart;
+        if (canvasId === 'chart500') chart500Obj = newChart;
     }
 
     window.onload = loadSheetData;
