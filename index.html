@@ -56,10 +56,16 @@
         .group-container { display: flex; flex-direction: column; gap: 16px; }
         .tournament-group-card { background: var(--card-bg); border-radius: 12px; padding: 18px; box-shadow: 0 3px 8px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; }
         
-        .group-header { border-bottom: 2px solid #edf2f7; padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+        /* 대회 그룹 헤더 */
+        .group-header { border-bottom: 2px solid #edf2f7; padding-bottom: 10px; margin-bottom: 12px; }
         .group-title { font-size: 16px; font-weight: 700; color: var(--primary-color); display: flex; flex-direction: column; gap: 4px; }
+        .group-name-wrapper { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
         .group-date { font-size: 12px; color: #a0aec0; font-weight: 600; }
-        .group-venue-link { font-size: 11px; color: var(--secondary-color); text-decoration: none; background: #ebf8ff; padding: 4px 10px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+        
+        /* 대회명 옆 괄호 경기장 링크 스타일 */
+        .group-venue-text { font-size: 14px; color: #4a5568; font-weight: 600; }
+        .group-venue-link { font-size: 14px; color: var(--secondary-color); text-decoration: none; font-weight: 600; background: #ebf8ff; padding: 1px 6px; border-radius: 4px; }
+        .group-venue-link:hover { text-decoration: underline; }
 
         .group-record-item { display: flex; flex-direction: column; padding: 12px 0; border-bottom: 1px dashed #edf2f7; gap: 6px; }
         .group-record-item:last-child { border-bottom: none; padding-bottom: 0; }
@@ -253,7 +259,6 @@
         }
     }
 
-    // 💡 종목 필터링 상태(targetMethod)를 지원하도록 렌더링 로직 수정
     function renderGroupedCards(rowsToRender, targetMethod = 'all') {
         const container = document.getElementById('groupContainer');
         container.innerHTML = '';
@@ -262,7 +267,6 @@
         rowsToRender.forEach(row => {
             const [date, tournament, venueLink, eventType, record, rank, note] = row;
             
-            // 탭 필터링 조건 추가 (선택한 종목만 매칭되도록 통제)
             if (targetMethod !== 'all' && eventType && !eventType.trim().includes(targetMethod)) {
                 return;
             }
@@ -289,18 +293,27 @@
             const groupCard = document.createElement('div');
             groupCard.className = 'tournament-group-card';
 
+            // 💡 괄호 안에 들어갈 빙상장 레이아웃 조건부 렌더링 추가
             let venueHtml = '';
-            if (group.venueLink && (group.venueLink.startsWith('http://') || group.venueLink.startsWith('https://'))) {
-                venueHtml = `<a href="${group.venueLink}" target="_blank" class="group-venue-link">🗺️ 경기장</a>`;
+            if (group.venueLink) {
+                if (group.venueLink.startsWith('http://') || group.venueLink.startsWith('https://')) {
+                    // 링크 주소일 때는 괄호 안에 지도 아이콘 형태로 묶어 결합
+                    venueHtml = `<a href="${group.venueLink}" target="_blank" class="group-venue-link">🗺️ 경기장 보기</a>`;
+                } else {
+                    // 주소가 아닌 일반 텍스트(예: 과천빙상장)일 때는 괄호 안에 글자 형태로 결합
+                    venueHtml = `<span class="group-venue-text">(${group.venueLink})</span>`;
+                }
             }
 
             let cardHtml = `
                 <div class="group-header">
                     <div class="group-title">
-                        <span>${group.tournament}</span>
+                        <div class="group-name-wrapper">
+                            <span>${group.tournament}</span>
+                            ${venueHtml}
+                        </div>
                         <span class="group-date">${group.date || '-'}</span>
                     </div>
-                    ${venueHtml}
                 </div>
             `;
 
@@ -337,12 +350,10 @@
         });
     }
 
-    // 💡 모바일 환경에서 오작동이 없도록 탭 활성화 로직 전면 재구성
     function filterTable(filterType) {
         const btns = document.querySelectorAll('.tab-btn');
         btns.forEach(btn => btn.classList.remove('active'));
         
-        // 클릭한 인자에 맞는 버튼 강제 활성화 구조로 교체
         if (filterType === 'all') document.getElementById('btn-all').classList.add('active');
         if (filterType === '333m') document.getElementById('btn-333').classList.add('active');
         if (filterType === '500m') document.getElementById('btn-500').classList.add('active');
@@ -350,7 +361,6 @@
         if(filterType === 'all') {
             renderGroupedCards(allOriginalRows, 'all');
         } else {
-            // 원본 데이터 주입 상태에서 분류 태그('333' 또는 '500')만 남겨서 맵핑 전달
             const cleanKey = filterType.replace('m', '');
             renderGroupedCards(allOriginalRows, cleanKey);
         }
