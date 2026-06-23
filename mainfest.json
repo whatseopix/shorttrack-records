@@ -8,7 +8,7 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "yuchan.png",
+      "src": "yuchan.png?v=1",
       "sizes": "512x512",
       "type": "image/png"
     }
