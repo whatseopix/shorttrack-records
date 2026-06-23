@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>유찬이의 쇼트트랙 기록실 ⛸️</title>
     
-    <!-- 스마트폰 홈 화면 앱 설치를 위한 manifest 파일 연결 -->
     <link rel="manifest" href="manifest.json">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -29,6 +28,7 @@
         header h1 { font-size: 20px; margin-bottom: 5px; }
         header p { font-size: 12px; opacity: 0.8; }
         
+        /* 요약 카드 섹션 */
         .pb-container { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 15px; }
         @media (min-width: 768px) { .pb-container { grid-template-columns: repeat(3, 1fr); } }
         
@@ -38,31 +38,51 @@
         .pb-card .time { font-size: 24px; font-weight: bold; color: var(--primary-color); text-align: left; margin-bottom: 4px; }
         .pb-card .details { font-size: 11px; color: #4a5568; line-height: 1.5; background: #f8fafc; padding: 8px; border-radius: 6px; text-align: left; }
 
-        .charts-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 25px; }
+        /* 그래프 섹션 */
+        .charts-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 20px; }
         @media (min-width: 768px) { .charts-grid { grid-template-columns: repeat(2, 1fr); } }
         
         .chart-section { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; }
         .chart-section h2 { font-size: 14px; margin-bottom: 10px; color: var(--primary-color); text-align: center; }
         
-        .tab-menu { display: flex; gap: 8px; margin-bottom: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        /* 탭 메뉴 */
+        .tab-menu { display: flex; gap: 8px; margin-bottom: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .tab-btn { background: #edf2f7; border: none; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; color: #4a5568; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: all 0.2s; }
         .tab-btn.active { background: var(--secondary-color); color: white; }
 
-        .table-section { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; min-width: 600px; }
-        th, td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); }
-        th { background-color: #edf2f7; color: var(--primary-color); font-weight: 600; }
-        tr:hover { background-color: #f8fafc; }
+        /* 💡 1번 아이디어: 리스트 카드(피드) 레이아웃 */
+        .feed-container { display: flex; flex-direction: column; gap: 12px; }
         
-        .rank-badge { display: inline-block; padding: 2px 6px; border-radius: 12px; font-size: 11px; font-weight: bold; }
-        .rank-1 { background-color: #feebc8; color: #c05621; }
-        .rank-2 { background-color: #e2e8f0; color: #4a5568; }
-        .rank-3 { background-color: #feeedc; color: #dd6b20; }
+        .record-feed-card { background: var(--card-bg); border-radius: 12px; padding: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 8px; position: relative; transition: transform 0.2s; }
+        .record-feed-card:active { transform: scale(0.99); }
         
+        /* 카드 첫째 줄 (종목 배지, 날짜, 순위메달) */
+        .card-top { display: flex; justify-content: space-between; align-items: center; }
+        .badge-group { display: flex; gap: 6px; align-items: center; }
+        .event-badge { background: #edf2f7; color: #2d3748; font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 6px; }
+        .event-badge.e333 { background: #feeedc; color: #dd6b20; }
+        .event-badge.e500 { background: #e6fffa; color: #234e52; }
+        
+        /* 최고기록 PB 마크 */
+        .pb-badge { background: #e53e3e; color: white; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+        
+        .card-date { font-size: 11px; color: #a0aec0; font-weight: 500; }
+        .card-rank { font-size: 18px; font-weight: bold; }
+
+        /* 카드 둘째 줄 (메인 기록 화면) */
+        .card-main { display: flex; align-items: baseline; gap: 4px; margin: 2px 0; }
+        .card-record { font-size: 26px; font-weight: 800; color: var(--primary-color); letter-spacing: -0.5px; }
+        
+        /* 카드 셋째 줄 (대회명 및 경기장 링크) */
+        .card-tournament { font-size: 13px; font-weight: 600; color: #2d3748; display: flex; align-items: center; gap: 6px; }
+        .card-venue-btn { font-size: 11px; color: var(--secondary-color); text-decoration: none; background: #ebf8ff; padding: 2px 6px; border-radius: 4px; font-weight: 500; }
+        
+        /* 카드 넷째 줄 (비고 한줄평) */
+        .card-note { font-size: 12px; color: #718096; background: #f8fafc; padding: 8px; border-radius: 6px; border-left: 3px solid #cbd5e0; }
+
         footer { text-align: center; margin-top: 30px; font-size: 11px; color: #a0aec0; padding: 10px 0; }
-        .loading { text-align: center; padding: 20px; font-weight: bold; color: var(--secondary-color); }
-        .venue-link { color: var(--secondary-color); text-decoration: none; font-weight: 500; }
+        .loading { text-align: center; padding: 30px; font-weight: bold; color: var(--secondary-color); font-size: 14px; }
     </style>
 </head>
 <body>
@@ -108,25 +128,8 @@
         <button class="tab-btn" onclick="filterTable('500m')">500m 기록</button>
     </div>
 
-    <div class="table-section">
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>날짜</th>
-                        <th>대회명</th>
-                        <th>경기장</th>
-                        <th>종목</th>
-                        <th>기록</th>
-                        <th>순위</th>
-                        <th>비고</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    <tr><td colspan="7" class="loading">데이터를 동기화하고 있습니다...</td></tr>
-                </tbody>
-            </table>
-        </div>
+    <div id="feedContainer" class="feed-container">
+        <div class="loading">데이터를 안전하게 동기화하고 있습니다...</div>
     </div>
 
     <footer>
@@ -140,14 +143,15 @@
     let chart333Obj = null;
     let chart500Obj = null;
     let allOriginalRows = [];
+    
+    // 글로벌 최고기록 값 보관 (PB 배지 실시간 대조용)
+    let globalBest333 = Infinity;
+    let globalBest500 = Infinity;
 
-    // 줄바꿈 문자(\\r) 및 따옴표 쉼표 에러를 완벽하게 잡아내는 고성능 CSV 파서
     function parseCSV(text) {
-        let p = '', r = [];
+        let r = [];
         let q = false;
         let row = [''];
-        
-        // 데이터 안정성을 위해 원본 문자열의 \\r 기호를 먼저 싹 제거합니다.
         let cleanText = text.replace(/\r/g, '');
 
         for (let i = 0; i < cleanText.length; i++) {
@@ -184,16 +188,13 @@
             const csvText = await response.text();
             const data = parseCSV(csvText);
 
-            // 헤더 제외 및 빈 행 걸러내기
             allOriginalRows = data.slice(1).filter(row => row.length >= 5 && row[0] !== "");
 
             if(allOriginalRows.length === 0) {
-                document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;">데이터가 없습니다. 구글 시트 내용을 확인해주세요.</td></tr>';
+                document.getElementById('feedContainer').innerHTML = '<div style="text-align:center; padding:20px;">시트에 기록된 데이터가 없습니다.</div>';
                 return;
             }
 
-            let best333 = Infinity;
-            let best500 = Infinity;
             let pb333Obj = { record: '-', tournament: '', date: '', note: '' };
             let pb500Obj = { record: '-', tournament: '', date: '', note: '' };
 
@@ -210,22 +211,24 @@
                 const sec = timeToSeconds(record);
                 
                 if (eventType.includes('333')) {
-                    if (sec && sec < best333) { 
-                        best333 = sec; 
+                    if (sec && sec < globalBest333) { 
+                        globalBest333 = sec; 
                         pb333Obj = { record: record, tournament: tournament, date: date, note: note };
                     }
                     if (sec) dataset333.push({ date: date, sec: sec });
                 } else if (eventType.includes('500')) {
-                    if (sec && sec < best500) { 
-                        best500 = sec; 
+                    if (sec && sec < globalBest500) { 
+                        globalBest500 = sec; 
                         pb500Obj = { record: record, tournament: tournament, date: date, note: note };
                     }
                     if (sec) dataset500.push({ date: date, sec: sec });
                 }
             });
 
-            renderTableRows(allOriginalRows);
+            // 카드 피드 렌더링 시작
+            renderFeedCards(allOriginalRows);
 
+            // 대시보드 요약 세팅
             document.getElementById('pb333').innerText = pb333Obj.record;
             document.getElementById('pb333Details').innerHTML = `🏆 ${pb333Obj.tournament}<br>📅 ${pb333Obj.date || '-'}<br>📝 ${pb333Obj.note || '설명 없음'}`;
 
@@ -234,6 +237,7 @@
             
             document.getElementById('totalRaces').innerText = allOriginalRows.length + '회';
 
+            // 그래프 그리기용 오름차순 정렬
             dataset333.sort((a, b) => new Date(a.date) - new Date(b.date));
             dataset500.sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -242,29 +246,60 @@
 
         } catch (error) {
             console.error(error);
-            document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" style="text-align:center; color:red;">구글 시트 로드 실패. 공유 설정을 확인해 주세요.</td></tr>';
+            document.getElementById('feedContainer').innerHTML = '<div style="text-align:center; color:red; padding:20px;">구글 시트 데이터를 동기화하지 못했습니다.</div>';
         }
     }
 
-    function renderTableRows(rowsToRender) {
-        const tableBody = document.getElementById('tableBody');
-        tableBody.innerHTML = '';
+    // 💡 표(Table)를 없애고 인스타그램 피드 형태의 카드 템플릿 레이아웃 생성
+    function renderFeedCards(rowsToRender) {
+        const container = document.getElementById('feedContainer');
+        container.innerHTML = '';
         
         rowsToRender.forEach(row => {
             const [date, tournament, venueLink, eventType, record, rank, note] = row;
-            let rankHtml = rank || '-';
-            if (rank && rank.includes('1')) rankHtml = `<span class="rank-badge rank-1">${rank}</span>`;
-            else if (rank && rank.includes('2')) rankHtml = `<span class="rank-badge rank-2">${rank}</span>`;
-            else if (rank && rank.includes('3')) rankHtml = `<span class="rank-badge rank-3">${rank}</span>`;
+            const sec = timeToSeconds(record);
+            
+            // 종목 뱃지 클래스 분기
+            let badgeClass = eventType.includes('333') ? 'e333' : 'e500';
+            
+            // 최고기록(PB) 배지 달기 조건문
+            let isPB = false;
+            if (eventType.includes('333') && sec === globalBest333) isPB = true;
+            if (eventType.includes('500') && sec === globalBest500) isPB = true;
+            
+            // 순위 아이콘 매칭 문구 계산
+            let rankIcon = rank || '-';
+            if (rank && rank.includes('1')) rankIcon = '🥇 ' + rank;
+            else if (rank && rank.includes('2')) rankIcon = '🥈 ' + rank;
+            else if (rank && rank.includes('3')) rankIcon = '🥉 ' + rank;
 
-            let venueHtml = venueLink || '-';
+            // 경기장 하이퍼링크 처리
+            let venueHtml = '';
             if (venueLink && (venueLink.startsWith('http://') || venueLink.startsWith('https://'))) {
-                venueHtml = `<a href="${venueLink}" target="_blank" class="venue-link">🔗 보기</a>`;
+                venueHtml = `<a href="${venueLink}" target="_blank" class="card-venue-btn">🗺️ 경기장 위치</a>`;
             }
 
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${date||'-'}</td><td>${tournament||'-'}</td><td>${venueHtml}</td><td>${eventType||'-'}</td><td><strong>${record||'-'}</strong></td><td>${rankHtml}</td><td>${note||''}</td>`;
-            tableBody.appendChild(tr);
+            const card = document.createElement('div');
+            card.className = 'record-feed-card';
+            card.innerHTML = `
+                <div class="card-top">
+                    <div class="badge-group">
+                        <span class="event-badge ${badgeClass}">${eventType}</span>
+                        ${isPB ? '<span class="pb-badge">⭐ 최고기록</span>' : ''}
+                        <span class="card-date">${date || '-'}</span>
+                    </div>
+                    <div class="card-rank">${rankIcon}</div>
+                </div>
+                <div class="card-main">
+                    <span class="card-record">${record || '-'}</span>
+                </div>
+                <div class="card-tournament">
+                    <span>${tournament || '-'}</span>
+                    ${venueHtml}
+                </div>
+                ${note ? `<div class="card-note">${note}</div>` : ''}
+            `;
+            container.appendChild(card);
         });
     }
 
@@ -274,16 +309,15 @@
         if (event && event.target) event.target.classList.add('active');
 
         if(filterType === 'all') {
-            renderTableRows(allOriginalRows);
+            renderFeedCards(allOriginalRows);
         } else {
             const filtered = allOriginalRows.filter(row => row[3] && row[3].trim().includes(filterType.replace(' 기록', '')));
-            renderTableRows(filtered);
+            renderFeedCards(filtered);
         }
     }
 
     function renderChart(canvasId, labels, data, labelName, lineColor, bgColor) {
         const ctx = document.getElementById(canvasId).getContext('2d');
-        
         if (canvasId === 'chart333' && chart333Obj) chart333Obj.destroy();
         if (canvasId === 'chart500' && chart500Obj) chart500Obj.destroy();
         
@@ -307,14 +341,12 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                aspectRatio: isMobile ? 1.7 : 2.2,
+                aspectRatio: isMobile ? 1.7 : 2.5,
                 scales: {
                     y: { ticks: { font: { size: 10 }, callback: value => value + '초' } },
                     x: { ticks: { font: { size: 9 }, maxRotation: 45, minRotation: 45 } }
                 },
-                plugins: {
-                    legend: { labels: { font: { size: 11 } } }
-                }
+                plugins: { legend: { display: false } }
             }
         });
 
