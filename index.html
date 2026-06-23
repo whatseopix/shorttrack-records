@@ -4,135 +4,147 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>유찬이의 쇼트트랙 기록실 ⛸️</title>
-    
     <link rel="manifest" href="manifest.json">
     
+    <!-- Chart.js 및 데이터 레이블 플러그인 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     
     <style>
         :root {
-            --primary-color: #1a365d;
-            --secondary-color: #2b6cb0;
-            --accent-color: #319795;
-            --chart2-color: #dd6b20;
-            --bg-color: #f7fafc;
+            --bg-color: #f4f7fa;
             --card-bg: #ffffff;
-            --text-color: #2d3748;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
             --border-color: #e2e8f0;
+            
+            /* 💡 종목별 시그니처 컬러 정의 */
+            --color-333: #ff7a00;
+            --color-333-bg: #fff5ec;
+            --color-500: #00b4d8;
+            --color-500-bg: #f0faff;
+            --color-total: #475569;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; padding: 12px; }
+        body { background-color: var(--bg-color); color: var(--text-main); line-height: 1.5; padding: 12px; -webkit-font-smoothing: antialiased; }
         .container { max-width: 1000px; margin: 0 auto; }
         
-        header { text-align: center; padding: 20px 10px; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; border-radius: 12px; margin-bottom: 15px; }
-        header h1 { font-size: 20px; margin-bottom: 5px; }
-        header p { font-size: 12px; opacity: 0.8; }
+        /* 헤더 디자인 간소화 (상단 여백 확보) */
+        header { text-align: center; padding: 16px 10px; background: #0f172a; color: white; border-radius: 16px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        header h1 { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+        header p { font-size: 11px; opacity: 0.6; margin-top: 2px; }
         
-        /* 요약 카드 섹션 */
-        .pb-container { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 15px; }
+        /* 💡 전략 1: 상단 최고기록 카드 계층화 디자인 */
+        .pb-container { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
         @media (min-width: 768px) { .pb-container { grid-template-columns: repeat(3, 1fr); } }
         
-        .pb-card { background: var(--card-bg); padding: 15px; border-radius: 10px; border-left: 5px solid var(--accent-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
-        .pb-card.pb-333 { border-left-color: var(--chart2-color); }
-        .pb-card h3 { font-size: 13px; color: #718096; margin-bottom: 4px; text-align: left; }
-        .pb-card .time { font-size: 24px; font-weight: bold; color: var(--primary-color); text-align: left; margin-bottom: 4px; }
-        .pb-card .details { font-size: 11px; color: #4a5568; line-height: 1.5; background: #f8fafc; padding: 8px; border-radius: 6px; text-align: left; }
+        .pb-card { background: var(--card-bg); padding: 16px; border-radius: 14px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01), 0 2px 4px -1px rgba(0,0,0,0.01); border: 1px solid var(--border-color); position: relative; }
+        .pb-card.pb-333 { border-top: 4px solid var(--color-333); }
+        .pb-card.pb-500 { border-top: 4px solid var(--color-500); }
+        .pb-card.pb-total { border-top: 4px solid var(--color-total); }
+        
+        .pb-card h3 { font-size: 12px; color: var(--text-muted); font-weight: 700; margin-bottom: 4px; text-transform: uppercase; letter-spacing: -0.2px; }
+        .pb-card .time { font-size: 32px; font-weight: 900; color: #0f172a; letter-spacing: -1px; line-height: 1.2; margin-bottom: 6px; }
+        .pb-card .details { font-size: 11px; color: var(--text-muted); line-height: 1.4; padding-top: 6px; border-top: 1px dashed var(--border-color); }
 
-        /* 그래프 섹션 */
-        .charts-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 20px; }
+        /* 그래프 영역 */
+        .charts-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 20px; }
         @media (min-width: 768px) { .charts-grid { grid-template-columns: repeat(2, 1fr); } }
         
-        .chart-section { background: var(--card-bg); padding: 15px; padding-top: 25px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; }
-        .chart-section h2 { font-size: 14px; margin-bottom: 15px; color: var(--primary-color); text-align: center; }
+        .chart-section { background: var(--card-bg); padding: 14px; padding-top: 20px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01); }
+        .chart-section h2 { font-size: 13px; margin-bottom: 12px; color: #334155; text-align: center; font-weight: 700; }
         
-        /* 탭 메뉴 */
-        .tab-menu { display: flex; gap: 8px; margin-bottom: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .tab-btn { background: #edf2f7; border: none; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; color: #4a5568; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: all 0.2s; }
-        .tab-btn.active { background: var(--secondary-color); color: white; }
+        /* 필터 탭 메뉴 */
+        .tab-menu { display: flex; gap: 6px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+        .tab-btn { background: #e2e8f0; border: none; padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 700; color: #475569; cursor: pointer; transition: all 0.15s ease; }
+        .tab-btn.active { background: #0f172a; color: white; }
 
-        /* 대회별 그룹 카드 레이아웃 */
-        .group-container { display: flex; flex-direction: column; gap: 16px; }
-        .tournament-group-card { background: var(--card-bg); border-radius: 12px; padding: 18px; box-shadow: 0 3px 8px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; }
+        /* 💡 전략 3: 대회별 그룹 카드 컴팩트 레이아웃 */
+        .group-container { display: flex; flex-direction: column; gap: 14px; }
+        .tournament-group-card { background: var(--card-bg); border-radius: 16px; padding: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.02); }
         
-        /* 대회 그룹 헤더 */
-        .group-header { border-bottom: 2px solid #edf2f7; padding-bottom: 10px; margin-bottom: 12px; }
-        .group-title { font-size: 16px; font-weight: 700; color: var(--primary-color); display: flex; flex-direction: column; gap: 4px; }
-        .group-name-wrapper { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-        .group-date { font-size: 12px; color: #a0aec0; font-weight: 600; }
+        .group-header { padding-bottom: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: flex-start; }
+        .group-title { display: flex; flex-direction: column; gap: 2px; }
+        .group-name { font-size: 14px; font-weight: 800; color: #0f172a; }
+        .group-date { font-size: 11px; color: var(--text-muted); font-weight: 600; }
         
-        /* 대회명 옆 괄호 경기장 링크 스타일 */
-        .group-venue-text { font-size: 14px; color: #4a5568; font-weight: 600; }
-        .group-venue-link { font-size: 14px; color: var(--secondary-color); text-decoration: none; font-weight: 600; background: #ebf8ff; padding: 1px 6px; border-radius: 4px; }
-        .group-venue-link:hover { text-decoration: underline; }
+        .group-venue-text { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+        .group-venue-link { font-size: 11px; color: var(--secondary-color); text-decoration: none; font-weight: 700; background: #f0fdf4; color: #166534; padding: 2px 6px; border-radius: 6px; border: 1px solid #bbf7d0; }
 
-        .group-record-item { display: flex; flex-direction: column; padding: 12px 0; border-bottom: 1px dashed #edf2f7; gap: 6px; }
+        /* 카드 내부 아이템 폰트 가독성 높임 */
+        .group-record-item { display: flex; flex-direction: column; padding: 10px 0; border-bottom: 1px dashed var(--border-color); gap: 4px; }
         .group-record-item:last-child { border-bottom: none; padding-bottom: 0; }
         
         .item-top { display: flex; justify-content: space-between; align-items: center; }
-        .item-meta { display: flex; gap: 8px; align-items: center; }
+        .item-meta { display: flex; gap: 6px; align-items: center; }
         
-        .event-badge { font-size: 13px; font-weight: 800; padding: 4px 10px; border-radius: 6px; letter-spacing: 0.3px; }
-        .event-badge.e333 { background: #feeedc; color: #dd6b20; border: 1px solid #fbd38d; }
-        .event-badge.e500 { background: #e6fffa; color: #234e52; border: 1px solid #b2f5ea; }
+        /* 💡 전략 2: 종목별 명확한 컬러 뱃지 매칭 */
+        .event-badge { font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 6px; }
+        .event-badge.e333 { background: var(--color-333-bg); color: var(--color-333); border: 1px solid #ffe0cc; }
+        .event-badge.e500 { background: var(--color-500-bg); color: var(--color-500); border: 1px solid #c7f0ff; }
         
-        .pb-badge { background: #e53e3e; color: white; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
+        .pb-badge { background: #ef4444; color: white; font-size: 9px; font-weight: bold; padding: 1px 5px; border-radius: 4px; letter-spacing: -0.2px; }
         
-        .item-record { font-size: 22px; font-weight: 800; color: #111827; margin: 2px 0; letter-spacing: -0.5px; }
-        .item-rank { font-size: 14px; font-weight: 700; color: #4a5568; }
+        .item-record { font-size: 20px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; }
+        .item-rank { font-size: 13px; font-weight: 800; color: #334155; }
         
-        .item-note { font-size: 12.5px; color: #2d3748; background: #f1f5f9; padding: 10px 14px; border-radius: 8px; margin-top: 4px; line-height: 1.5; border-left: 4px solid #cbd5e1; font-weight: 500; }
+        /* 비고 말풍선 형태로 세련되게 변경 */
+        .item-note { font-size: 12px; color: #334155; background: #f8fafc; padding: 8px 12px; border-radius: 8px; margin-top: 2px; border: 1px solid var(--border-color); font-weight: 500; text-shadow: 0 0 1px rgba(0,0,0,0.01); }
 
-        footer { text-align: center; margin-top: 30px; font-size: 11px; color: #a0aec0; padding: 10px 0; }
-        .loading { text-align: center; padding: 30px; font-weight: bold; color: var(--secondary-color); font-size: 14px; }
+        footer { text-align: center; margin-top: 30px; font-size: 11px; color: var(--text-muted); padding: 10px 0; }
+        .loading { text-align: center; padding: 40px; font-weight: bold; color: var(--text-muted); font-size: 13px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>유찬이의 쇼트트랙 기록실 ⛸️</h1>
-        <p>구글 시트 연동 모바일 최적화 대시보드</p>
+        <h1>유찬이의 쇼트트랙 기록실  Skating App</h1>
+        <p>구글 시트 데이터 연동 실시간 대시보드</p>
     </header>
 
+    <!-- 최고 기록 카드 섹션 -->
     <div class="pb-container">
         <div class="pb-card pb-333">
-            <h3>333m 개인 최고 기록 (PB)</h3>
+            <h3>333m 최고기록 (PB)</h3>
             <div class="time" id="pb333">-</div>
-            <div class="details" id="pb333Details">불러오는 중...</div>
+            <div class="details" id="pb333Details">데이터 동기화 중...</div>
         </div>
-        <div class="pb-card">
-            <h3>500m 개인 최고 기록 (PB)</h3>
+        <div class="pb-card pb-500">
+            <h3>500m 최고기록 (PB)</h3>
             <div class="time" id="pb500">-</div>
-            <div class="details" id="pb500Details">불러오는 중...</div>
+            <div class="details" id="pb500Details">데이터 동기화 중...</div>
         </div>
-        <div class="pb-card" style="border-left-color: #4a5568;">
-            <h3>총 출전 대회 수</h3>
-            <div class="time" id="totalRaces" style="color: var(--accent-color);">-</div>
-            <div class="details" style="background:none; padding:0; text-align:center; font-weight:600; color:#718096;">유찬이 파이팅! 🔥</div>
+        <div class="pb-card pb-total">
+            <h3>총 출전 대회</h3>
+            <div class="time" id="totalRaces" style="color: #475569;">-</div>
+            <div class="details" style="text-align: center; font-weight: 700; color: var(--secondary-color);">빙판 위의 주인공, 유찬! ✨</div>
         </div>
     </div>
 
+    <!-- 그래프 섹션 -->
     <div class="charts-grid">
         <div class="chart-section">
-            <h2>📈 333m 기록 추이 변화</h2>
+            <h2>333m 기록 추이 (초)</h2>
             <canvas id="chart333"></canvas>
         </div>
         <div class="chart-section">
-            <h2>📈 500m 기록 추이 변화</h2>
+            <h2>500m 기록 추이 (초)</h2>
             <canvas id="chart500"></canvas>
         </div>
     </div>
 
+    <!-- 필터 탭 -->
     <div class="tab-menu">
         <button id="btn-all" class="tab-btn active" onclick="filterTable('all')">전체보기</button>
-        <button id="btn-333" class="tab-btn" onclick="filterTable('333m')">333m 기록</button>
-        <button id="btn-500" class="tab-btn" onclick="filterTable('500m')">500m 기록</button>
+        <button id="btn-333" class="tab-btn" onclick="filterTable('333m')">333m</button>
+        <button id="btn-500" class="tab-btn" onclick="filterTable('500m')">500m</button>
     </div>
 
+    <!-- 대회별 그룹 카드 리스트 -->
     <div id="groupContainer" class="group-container">
-        <div class="loading">데이터를 대회별로 분류하여 동기화 중입니다...</div>
+        <div class="loading">유찬이의 경기 기록을 분류하고 있습니다...</div>
     </div>
 
     <footer>
@@ -182,7 +194,7 @@
             const secs = (seconds % 60).toFixed(2);
             return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
         }
-        return seconds.toFixed(2);
+        return seconds.toFixed(2) + '초';
     }
 
     function timeToSeconds(timeStr) {
@@ -203,7 +215,7 @@
             allOriginalRows = data.slice(1).filter(row => row.length >= 5 && row[0] !== "");
 
             if(allOriginalRows.length === 0) {
-                document.getElementById('groupContainer').innerHTML = '<div style="text-align:center; padding:20px;">시트에 기록된 데이터가 없습니다.</div>';
+                document.getElementById('groupContainer').innerHTML = '<div style="text-align:center; padding:20px;">시트에 데이터가 없습니다.</div>';
                 return;
             }
 
@@ -239,19 +251,20 @@
 
             renderGroupedCards(allOriginalRows);
 
-            document.getElementById('pb333').innerText = pb333Obj.record;
-            document.getElementById('pb333Details').innerHTML = `🏆 ${pb333Obj.tournament}<br>📅 ${pb333Obj.date || '-'}<br>📝 ${pb333Obj.note || '설명 없음'}`;
+            document.getElementById('pb333').innerText = pb333Obj.record + (pb333Obj.record.includes('초') ? '' : '초');
+            document.getElementById('pb333Details').innerHTML = `🥇 ${pb333Obj.tournament} (${pb333Obj.date || '-'})`;
 
-            document.getElementById('pb500').innerText = pb500Obj.record;
-            document.getElementById('pb500Details').innerHTML = `🏆 ${pb500Obj.tournament}<br>📅 ${pb500Obj.date || '-'}<br>📝 ${pb500Obj.note || '설명 없음'}`;
+            document.getElementById('pb500').innerText = pb500Obj.record + (pb500Obj.record.includes('초') ? '' : '초');
+            document.getElementById('pb500Details').innerHTML = `🥇 ${pb500Obj.tournament} (${pb500Obj.date || '-'})`;
             
             document.getElementById('totalRaces').innerText = allOriginalRows.length + '회';
 
             dataset333.sort((a, b) => new Date(a.date) - new Date(b.date));
             dataset500.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-            renderChart('chart333', dataset333.map(d => d.date), dataset333.map(d => d.sec), '333m 기록추이', '#dd6b20', 'rgba(221, 107, 32, 0.04)');
-            renderChart('chart500', dataset500.map(d => d.date), dataset500.map(d => d.sec), '500m 기록추이', '#319795', 'rgba(49, 151, 149, 0.04)');
+            // 가독성이 극대화된 그래프 호출
+            renderChart('chart333', dataset333.map(d => d.date), dataset333.map(d => d.sec), '#ff7a00', 'rgba(255, 122, 0, 0.03)');
+            renderChart('chart500', dataset500.map(d => d.date), dataset500.map(d => d.sec), '#00b4d8', 'rgba(0, 180, 216, 0.03)');
 
         } catch (error) {
             console.error(error);
@@ -285,7 +298,7 @@
         const sortedGroups = Object.values(groups).sort((a, b) => new Date(b.date) - new Date(a.date));
 
         if(sortedGroups.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:30px; color:#a0aec0;">해당 종목의 경기 기록이 없습니다.</div>';
+            container.innerHTML = '<div style="text-align:center; padding:30px; color:#a0aec0; font-size:12px;">경기 기록이 존재하지 않습니다.</div>';
             return;
         }
 
@@ -293,14 +306,11 @@
             const groupCard = document.createElement('div');
             groupCard.className = 'tournament-group-card';
 
-            // 💡 괄호 안에 들어갈 빙상장 레이아웃 조건부 렌더링 추가
             let venueHtml = '';
             if (group.venueLink) {
                 if (group.venueLink.startsWith('http://') || group.venueLink.startsWith('https://')) {
-                    // 링크 주소일 때는 괄호 안에 지도 아이콘 형태로 묶어 결합
-                    venueHtml = `<a href="${group.venueLink}" target="_blank" class="group-venue-link">🗺️ 경기장 보기</a>`;
+                    venueHtml = `<a href="${group.venueLink}" target="_blank" class="group-venue-link">🗺️ 링크장 지도</a>`;
                 } else {
-                    // 주소가 아닌 일반 텍스트(예: 과천빙상장)일 때는 괄호 안에 글자 형태로 결합
                     venueHtml = `<span class="group-venue-text">(${group.venueLink})</span>`;
                 }
             }
@@ -309,7 +319,7 @@
                 <div class="group-header">
                     <div class="group-title">
                         <div class="group-name-wrapper">
-                            <span>${group.tournament}</span>
+                            <span class="group-name">${group.tournament}</span>
                             ${venueHtml}
                         </div>
                         <span class="group-date">${group.date || '-'}</span>
@@ -335,12 +345,12 @@
                         <div class="item-top">
                             <div class="item-meta">
                                 <span class="event-badge ${badgeClass}">${item.eventType}</span>
-                                ${isPB ? '<span class="pb-badge">⭐ 최고기록</span>' : ''}
+                                ${isPB ? '<span class="pb-badge">⭐ PB</span>' : ''}
                             </div>
                             <div class="item-rank">${rankText}</div>
                         </div>
-                        <div class="item-record">${item.record || '-'}</div>
-                        ${item.note ? `<div class="item-note">📝 ${item.note}</div>` : ''}
+                        <div class="item-record">${item.record || '-'}${item.record.includes('초') ? '' : '초'}</div>
+                        ${item.note ? `<div class="item-note">💡 ${item.note}</div>` : ''}
                     </div>
                 `;
             });
@@ -366,7 +376,7 @@
         }
     }
 
-    function renderChart(canvasId, labels, data, labelName, lineColor, bgColor) {
+    function renderChart(canvasId, labels, data, themeColor, bgColor) {
         const ctx = document.getElementById(canvasId).getContext('2d');
         if (canvasId === 'chart333' && chart333Obj) chart333Obj.destroy();
         if (canvasId === 'chart500' && chart500Obj) chart500Obj.destroy();
@@ -378,15 +388,14 @@
             data: {
                 labels: labels,
                 datasets: [{
-                    label: labelName,
                     data: data,
-                    borderColor: lineColor,
+                    borderColor: themeColor,
                     backgroundColor: bgColor,
-                    borderWidth: 2.5,
+                    borderWidth: 3,
                     pointRadius: 5,
                     pointBackgroundColor: '#ffffff',
-                    pointBorderColor: lineColor,
-                    pointBorderWidth: 2,
+                    pointBorderColor: themeColor,
+                    pointBorderWidth: 2.5,
                     tension: 0.15,
                     fill: true
                 }]
@@ -395,25 +404,25 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                aspectRatio: isMobile ? 1.5 : 2.4,
-                layout: {
-                    padding: { top: 20, left: 5, right: 5 }
-                },
+                aspectRatio: isMobile ? 1.6 : 2.5,
+                layout: { padding: { top: 24, left: 8, right: 8, bottom: 4 } },
                 scales: {
-                    y: { ticks: { font: { size: 10 }, callback: value => value + '초' } },
-                    x: { ticks: { font: { size: 9 }, maxRotation: 45, minRotation: 45 } }
+                    y: { display: false, grid: { display: false } }, // 💡 차트 내부 숫자가 완벽히 부각되도록 복잡한 Y축 선 제거
+                    x: { grid: { display: false }, ticks: { font: { size: 10, weight: '600' }, color: '#94a3b8' } }
                 },
                 plugins: {
                     legend: { display: false },
                     datalabels: {
                         align: 'top',
                         anchor: 'end',
-                        backgroundColor: function(context) { return context.dataset.borderColor; },
-                        borderRadius: 4,
+                        backgroundColor: themeColor,
+                        borderRadius: 6,
                         color: 'white',
-                        font: { size: isMobile ? 10 : 11, weight: 'bold' },
+                        font: { size: isMobile ? 11 : 12, weight: 'bold' },
                         formatter: function(value) { return secondsToTimeString(value); },
-                        padding: 4
+                        padding: { top: 4, bottom: 4, left: 6, right: 6 },
+                        shadowBlur: 4,
+                        shadowColor: 'rgba(0,0,0,0.15)'
                     }
                 }
             }
