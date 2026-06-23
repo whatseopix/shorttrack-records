@@ -3,12 +3,12 @@
   "short_name": "유찬기록실",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#1a365d",
-  "theme_color": "#1a365d",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3593/3593685.png",
+      "src": "yuchan.png",
       "sizes": "512x512",
       "type": "image/png"
     }
