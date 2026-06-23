@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>유찬이의 쇼트트랙 기록실 ⛸️</title>
+    
+    <!-- 스마트폰 홈 화면 앱 설치를 위한 manifest 파일 연결 -->
+    <link rel="manifest" href="manifest.json">
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -25,7 +29,6 @@
         header h1 { font-size: 20px; margin-bottom: 5px; }
         header p { font-size: 12px; opacity: 0.8; }
         
-        /* 최고 기록 카드 레이아웃 (기본 1열, PC에서 3열) */
         .pb-container { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 15px; }
         @media (min-width: 768px) { .pb-container { grid-template-columns: repeat(3, 1fr); } }
         
@@ -35,19 +38,16 @@
         .pb-card .time { font-size: 24px; font-weight: bold; color: var(--primary-color); text-align: left; margin-bottom: 4px; }
         .pb-card .details { font-size: 11px; color: #4a5568; line-height: 1.5; background: #f8fafc; padding: 8px; border-radius: 6px; text-align: left; }
 
-        /* 그래프 레이아웃 (기본 1열, PC에서 2열) */
         .charts-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 25px; }
         @media (min-width: 768px) { .charts-grid { grid-template-columns: repeat(2, 1fr); } }
         
         .chart-section { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; }
         .chart-section h2 { font-size: 14px; margin-bottom: 10px; color: var(--primary-color); text-align: center; }
         
-        /* 모바일 탭 메뉴 스타일 */
         .tab-menu { display: flex; gap: 8px; margin-bottom: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .tab-btn { background: #edf2f7; border: none; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; color: #4a5568; cursor: pointer; whitespace: nowrap; flex-shrink: 0; transition: all 0.2s; }
+        .tab-btn { background: #edf2f7; border: none; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; color: #4a5568; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: all 0.2s; }
         .tab-btn.active { background: var(--secondary-color); color: white; }
 
-        /* 테이블 영역 최적화 */
         .table-section { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; min-width: 600px; }
@@ -139,7 +139,7 @@
 
     let chart333Obj = null;
     let chart500Obj = null;
-    let allOriginalRows = []; // 전체 필터링용 원본 데이터 백업
+    let allOriginalRows = [];
 
     function parseCSV(text) {
         const lines = text.split('\n');
@@ -203,10 +203,8 @@
                 }
             });
 
-            // 테이블 첫 화면은 '전체보기' 구성
             renderTableRows(allOriginalRows);
 
-            // 대시보드 카드 세팅
             document.getElementById('pb333').innerText = pb333Obj.record;
             document.getElementById('pb333Details').innerHTML = `🏆 ${pb333Obj.tournament}<br>📅 ${pb333Obj.date || '-'}<br>📝 ${pb333Obj.note || '설명 없음'}`;
 
@@ -215,7 +213,6 @@
             
             document.getElementById('totalRaces').innerText = allOriginalRows.length + '회';
 
-            // 그래프용 정렬 및 축 데이터 빌드
             dataset333.sort((a, b) => new Date(a.date) - new Date(b.date));
             dataset500.sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -228,7 +225,6 @@
         }
     }
 
-    // 테이블 렌더링 전용 분리 함수
     function renderTableRows(rowsToRender) {
         const tableBody = document.getElementById('tableBody');
         tableBody.innerHTML = '';
@@ -246,3 +242,67 @@
             }
 
             const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${date||'-'}</td><td>${tournament||'-'}</td><td>${venueHtml}</td><td>${eventType||'-'}</td><td><strong>${record||'-'}</strong></td><td>${rankHtml}</td><td>${note||''}</td>`;
+            tableBody.appendChild(tr);
+        });
+    }
+
+    function filterTable(filterType) {
+        const btns = document.querySelectorAll('.tab-btn');
+        btns.forEach(btn => btn.classList.remove('active'));
+        if (event) event.target.classList.add('active');
+
+        if(filterType === 'all') {
+            renderTableRows(allOriginalRows);
+        } else {
+            const filtered = allOriginalRows.filter(row => row[3] && row[3].trim().includes(filterType.replace(' 기록', '')));
+            renderTableRows(filtered);
+        }
+    }
+
+    function renderChart(canvasId, labels, data, labelName, lineColor, bgColor) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        
+        if (canvasId === 'chart333' && chart333Obj) chart333Obj.destroy();
+        if (canvasId === 'chart500' && chart500Obj) chart500Obj.destroy();
+        
+        const isMobile = window.innerWidth < 500;
+
+        const newChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: labelName,
+                    data: data,
+                    borderColor: lineColor,
+                    backgroundColor: bgColor,
+                    borderWidth: 2,
+                    pointRadius: isMobile ? 3 : 4,
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: isMobile ? 1.7 : 2.2,
+                scales: {
+                    y: { ticks: { font: { size: 10 }, callback: value => value + '초' } },
+                    x: { ticks: { font: { size: 9 }, maxRotation: 45, minRotation: 45 } }
+                },
+                plugins: {
+                    legend: { labels: { font: { size: 11 } } }
+                }
+            }
+        });
+
+        if (canvasId === 'chart333') chart333Obj = newChart;
+        if (canvasId === 'chart500') chart500Obj = newChart;
+    }
+
+    window.onload = loadSheetData;
+</script>
+
+</body>
+</html>
