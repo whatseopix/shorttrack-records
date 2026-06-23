@@ -22,7 +22,7 @@
             --color-333-bg: #fff5ec;
             --color-500: #00b4d8;
             --color-500-bg: #f0faff;
-            --color-goal: #e11d48; /* 도전목표용 강렬한 로즈 핑크 */
+            --color-goal: #e11d48;
             --color-total: #475569;
         }
 
@@ -34,11 +34,41 @@
         header h1 { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
         header p { font-size: 11px; opacity: 0.6; margin-top: 2px; }
         
-        /* 💡 도전 목표 추가를 위해 그리드 레이아웃을 4열(PC 기준)로 확장 */
-        .pb-container { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
-        @media (min-width: 768px) { .pb-container { grid-template-columns: repeat(4, 1fr); } }
+        /* 💡 전략: 모바일 환경에서 대시보드 카드를 가로 한 줄 스크롤 피드로 변경 */
+        .pb-container { 
+            display: flex; 
+            gap: 12px; 
+            margin-bottom: 16px; 
+            overflow-x: auto; 
+            padding-bottom: 8px; /* 스크롤바와 카드 사이 여백 */
+            -webkit-overflow-scrolling: touch; /* 아이폰 환경 부드러운 스크롤 */
+        }
         
-        .pb-card { background: var(--card-bg); padding: 16px; border-radius: 14px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01), 0 2px 4px -1px rgba(0,0,0,0.01); border: 1px solid var(--border-color); position: relative; display: flex; flex-direction: column; justify-content: space-between; }
+        /* 모바일에서는 각 카드가 화면 가로 폭의 75%를 차지하여 다음 카드가 살짝 보이게 통제 */
+        .pb-card { 
+            flex: 0 0 75%; 
+            background: var(--card-bg); 
+            padding: 16px; 
+            border-radius: 14px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01), 0 2px 4px -1px rgba(0,0,0,0.01); 
+            border: 1px solid var(--border-color); 
+            position: relative; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+        }
+        
+        /* PC 화면이나 태블릿 환경에서는 가로 스크롤을 해제하고 정상적인 4열 격자로 자동 확장 */
+        @media (min-width: 768px) { 
+            .pb-container { 
+                display: grid; 
+                grid-template-columns: repeat(4, 1fr); 
+                overflow-x: visible; 
+                padding-bottom: 0; 
+            }
+            .pb-card { flex: none; }
+        }
+        
         .pb-card.pb-333 { border-top: 4px solid var(--color-333); }
         .pb-card.pb-500 { border-top: 4px solid var(--color-500); }
         .pb-card.pb-goal { border-top: 4px solid var(--color-goal); background: linear-gradient(to bottom, #fff, #fff1f2); }
@@ -46,9 +76,8 @@
         
         .pb-card h3 { font-size: 12px; color: var(--text-muted); font-weight: 700; margin-bottom: 4px; letter-spacing: -0.2px; }
         .pb-card .time { font-size: 28px; font-weight: 900; color: #0f172a; letter-spacing: -1px; line-height: 1.2; margin-bottom: 6px; }
-        .pb-card .details { font-size: 11px; color: var(--text-muted); line-height: 1.4; padding-top: 6px; border-top: 1px dashed var(--border-color); }
+        .pb-card .details { font-size: 11px; color: var(--text-muted); line-height: 1.4; padding-top: 6px; border-top: 1px dashed var(--border-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        /* 도전목표 실시간 남은 초 강조 스타일 */
         .pb-card.pb-goal .time { color: var(--color-goal); }
         .pb-card.pb-goal .details { color: #9f1239; font-weight: 600; }
 
@@ -60,8 +89,8 @@
         .chart-section h2 { font-size: 13px; margin-bottom: 12px; color: #334155; text-align: center; font-weight: 700; }
         
         /* 필터 탭 메뉴 */
-        .tab-menu { display: flex; gap: 6px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
-        .tab-btn { background: #e2e8f0; border: none; padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 700; color: #475569; cursor: pointer; transition: all 0.15s ease; }
+        .tab-menu { display: flex; gap: 6px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .tab-btn { background: #e2e8f0; border: none; padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 700; color: #475569; cursor: pointer; transition: all 0.15s ease; white-space: nowrap; }
         .tab-btn.active { background: #0f172a; color: white; }
 
         /* 대회별 그룹 카드 레이아웃 */
@@ -105,7 +134,7 @@
         <p>구글 시트 데이터 연동 실시간 대시보드</p>
     </header>
 
-    <!-- 최고 기록 및 도전 목표 카드 섹션 -->
+    <!-- 💡 모바일 가로 1열 슬라이드 배치가 적용된 상단 요약 카드 피드 -->
     <div class="pb-container">
         <div class="pb-card pb-333">
             <h3>333m 최고기록 (PB)</h3>
@@ -117,7 +146,6 @@
             <div class="time" id="pb500">-</div>
             <div class="details" id="pb500Details">데이터 동기화 중...</div>
         </div>
-        <!-- 💡 새롭게 추가된 도전 목표 카드 -->
         <div class="pb-card pb-goal">
             <h3>🎯 500m 도전 목표</h3>
             <div class="time">48.900초</div>
@@ -161,8 +189,6 @@
 
 <script>
     const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSKW2Np5p8qrOwLlea_eIf16PM5vMeuW3WvC2KQ2TY-5vLBLKMHdkigI9mfEFHku3N_w6RbDV35r9wi/pub?gid=166948240&single=true&output=csv';
-    
-    // 💡 목표 초 정의 (48.900)
     const targetGoalSeconds = 48.900;
 
     let chart333Obj = null;
@@ -201,10 +227,18 @@
         if (!seconds || isNaN(seconds)) return '';
         if (seconds >= 60) {
             const mins = Math.floor(seconds / 60);
-            const secs = (seconds % 60).toFixed(3); // 도전 목표 규격에 맞춰 밀리초 3자리 표기 보장
+            const secs = (seconds % 60).toFixed(3);
             return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
         }
         return seconds.toFixed(3) + '초';
+    }
+
+    // 밀리초 규격을 깔끔하게 맞춰주는 헬퍼 (예: 51.3 -> 51.300)
+    function formatRecordString(str) {
+        if(!str) return '-';
+        const num = timeToSeconds(str);
+        if(!num || isNaN(num)) return str;
+        return secondsToTimeString(num);
     }
 
     function timeToSeconds(timeStr) {
@@ -261,22 +295,21 @@
 
             renderGroupedCards(allOriginalRows);
 
-            document.getElementById('pb333').innerText = pb333Obj.record + (pb333Obj.record.includes('초') ? '' : '초');
+            document.getElementById('pb333').innerText = formatRecordString(pb333Obj.record);
             document.getElementById('pb333Details').innerHTML = `🏆 ${pb333Obj.tournament}`;
 
-            document.getElementById('pb500').innerText = pb500Obj.record + (pb500Obj.record.includes('초') ? '' : '초');
+            document.getElementById('pb500').innerText = formatRecordString(pb500Obj.record);
             document.getElementById('pb500Details').innerHTML = `🏆 ${pb500Obj.tournament}`;
             
-            // 💡 실시간 남은 목표 기록 연산 로직
             if (globalBest500 !== Infinity) {
                 const remaining = (globalBest500 - targetGoalSeconds).toFixed(3);
                 if (remaining <= 0) {
-                    document.getElementById('goalCalculated').innerHTML = '🎉 목표 달성 완료! 대단해 유찬아! 🎉';
+                    document.getElementById('goalCalculated').innerHTML = '🎉 목표 달성 완료! 🎉';
                 } else {
-                    document.getElementById('goalCalculated').innerHTML = `🔥 목표까지 단 <strong>${remaining}초</strong> 남음!`;
+                    document.getElementById('goalCalculated').innerHTML = `🔥 목표까지 단 <strong>${remaining}초</strong>!`;
                 }
             } else {
-                document.getElementById('goalCalculated').innerText = '500m 경기 기록이 없습니다.';
+                document.getElementById('goalCalculated').innerText = '데이터 없음';
             }
             
             document.getElementById('totalRaces').innerText = allOriginalRows.length + '회';
@@ -370,7 +403,7 @@
                             </div>
                             <div class="item-rank">${rankText}</div>
                         </div>
-                        <div class="item-record">${item.record || '-'}${item.record.includes('초') ? '' : '초'}</div>
+                        <div class="item-record">${formatRecordString(item.record)}</div>
                         ${item.note ? `<div class="item-note">💡 ${item.note}</div>` : ''}
                     </div>
                 `;
