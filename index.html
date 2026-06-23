@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>유찬이의 쇼트트랙 기록실 ⛸️</title>
     
-    <!-- 스마트폰 홈 화면 앱 설치를 위한 manifest 파일 연결 -->
     <link rel="manifest" href="manifest.json">
     
-    <!-- Chart.js 및 데이터 레이블 표시용 외부 플러그인 CDN 로드 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     
@@ -46,7 +44,6 @@
         .charts-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 20px; }
         @media (min-width: 768px) { .charts-grid { grid-template-columns: repeat(2, 1fr); } }
         
-        /* 차트 위에 기록 숫자가 잘 보이도록 여백(padding-top)을 소폭 넓힘 */
         .chart-section { background: var(--card-bg); padding: 15px; padding-top: 25px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; }
         .chart-section h2 { font-size: 14px; margin-bottom: 15px; color: var(--primary-color); text-align: center; }
         
@@ -123,9 +120,9 @@
     </div>
 
     <div class="tab-menu">
-        <button class="tab-btn active" onclick="filterTable('all')">전체보기</button>
-        <button class="tab-btn" onclick="filterTable('333m')">333m 기록</button>
-        <button class="tab-btn" onclick="filterTable('500m')">500m 기록</button>
+        <button id="btn-all" class="tab-btn active" onclick="filterTable('all')">전체보기</button>
+        <button id="btn-333" class="tab-btn" onclick="filterTable('333m')">333m 기록</button>
+        <button id="btn-500" class="tab-btn" onclick="filterTable('500m')">500m 기록</button>
     </div>
 
     <div id="groupContainer" class="group-container">
@@ -172,13 +169,11 @@
         return r;
     }
 
-    // 초 단위를 "분:초.밀리초" 주행 타임스탬프로 역변환하는 유틸 함수 (그래프 내 글자 표기용)
     function secondsToTimeString(seconds) {
         if (!seconds || isNaN(seconds)) return '';
         if (seconds >= 60) {
             const mins = Math.floor(seconds / 60);
             const secs = (seconds % 60).toFixed(2);
-            // 초 단위가 10보다 작을 때 자릿수 채우기 처리 (예: 1:05.12)
             return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
         }
         return seconds.toFixed(2);
@@ -258,13 +253,20 @@
         }
     }
 
-    function renderGroupedCards(rowsToRender) {
+    // 💡 종목 필터링 상태(targetMethod)를 지원하도록 렌더링 로직 수정
+    function renderGroupedCards(rowsToRender, targetMethod = 'all') {
         const container = document.getElementById('groupContainer');
         container.innerHTML = '';
 
         const groups = {};
         rowsToRender.forEach(row => {
             const [date, tournament, venueLink, eventType, record, rank, note] = row;
+            
+            // 탭 필터링 조건 추가 (선택한 종목만 매칭되도록 통제)
+            if (targetMethod !== 'all' && eventType && !eventType.trim().includes(targetMethod)) {
+                return;
+            }
+
             if (!groups[tournament]) {
                 groups[tournament] = {
                     tournament: tournament,
@@ -277,6 +279,11 @@
         });
 
         const sortedGroups = Object.values(groups).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        if(sortedGroups.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:30px; color:#a0aec0;">해당 종목의 경기 기록이 없습니다.</div>';
+            return;
+        }
 
         sortedGroups.forEach(group => {
             const groupCard = document.createElement('div');
@@ -330,16 +337,22 @@
         });
     }
 
+    // 💡 모바일 환경에서 오작동이 없도록 탭 활성화 로직 전면 재구성
     function filterTable(filterType) {
         const btns = document.querySelectorAll('.tab-btn');
         btns.forEach(btn => btn.classList.remove('active'));
-        if (event && event.target) event.target.classList.add('active');
+        
+        // 클릭한 인자에 맞는 버튼 강제 활성화 구조로 교체
+        if (filterType === 'all') document.getElementById('btn-all').classList.add('active');
+        if (filterType === '333m') document.getElementById('btn-333').classList.add('active');
+        if (filterType === '500m') document.getElementById('btn-500').classList.add('active');
 
         if(filterType === 'all') {
-            renderGroupedCards(allOriginalRows);
+            renderGroupedCards(allOriginalRows, 'all');
         } else {
-            const filtered = allOriginalRows.filter(row => row[3] && row[3].trim().includes(filterType.replace(' 기록', '')));
-            renderGroupedCards(filtered);
+            // 원본 데이터 주입 상태에서 분류 태그('333' 또는 '500')만 남겨서 맵핑 전달
+            const cleanKey = filterType.replace('m', '');
+            renderGroupedCards(allOriginalRows, cleanKey);
         }
     }
 
@@ -360,51 +373,36 @@
                     borderColor: lineColor,
                     backgroundColor: bgColor,
                     borderWidth: 2.5,
-                    pointRadius: 5, // 포인트 동그라미 크기를 키워 시인성 증대
-                    pointBackgroundColor: '#ffffff', // 내부를 흰색으로 채워 세련되게 표현
+                    pointRadius: 5,
+                    pointBackgroundColor: '#ffffff',
                     pointBorderColor: lineColor,
                     pointBorderWidth: 2,
                     tension: 0.15,
                     fill: true
                 }]
             },
-            // 데이터 플러그인 활성화 처리
             plugins: [ChartDataLabels],
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
                 aspectRatio: isMobile ? 1.5 : 2.4,
                 layout: {
-                    // 상단에 표시될 초단위 텍스트가 잘리지 않도록 여백 부여
                     padding: { top: 20, left: 5, right: 5 }
                 },
                 scales: {
-                    y: { 
-                        ticks: { font: { size: 10 }, callback: value => value + '초' } 
-                    },
-                    x: { 
-                        ticks: { font: { size: 9 }, maxRotation: 45, minRotation: 45 } 
-                    }
+                    y: { ticks: { font: { size: 10 }, callback: value => value + '초' } },
+                    x: { ticks: { font: { size: 9 }, maxRotation: 45, minRotation: 45 } }
                 },
                 plugins: {
                     legend: { display: false },
-                    // 💡 상단에 항상 초 단위를 고정 표시하는 데이터 레이블 코어 옵션
                     datalabels: {
                         align: 'top',
                         anchor: 'end',
-                        backgroundColor: function(context) {
-                            return context.dataset.borderColor; // 종목 선 색상과 일치화
-                        },
+                        backgroundColor: function(context) { return context.dataset.borderColor; },
                         borderRadius: 4,
                         color: 'white',
-                        font: {
-                            size: isMobile ? 10 : 11,
-                            weight: 'bold'
-                        },
-                        formatter: function(value) {
-                            // 단순 숫자가 아닌 시트에 입력한 것과 같은 문자열 형태로 자동 포맷팅
-                            return secondsToTimeString(value);
-                        },
+                        font: { size: isMobile ? 10 : 11, weight: 'bold' },
+                        formatter: function(value) { return secondsToTimeString(value); },
                         padding: 4
                     }
                 }
