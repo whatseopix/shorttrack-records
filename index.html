@@ -6,7 +6,6 @@
     <title>유찬이의 쇼트트랙 기록실 ⛸️</title>
     <link rel="manifest" href="manifest.json">
     
-    <!-- 💡 모바일 홈 화면 및 브라우저 캐시 강제 돌파를 위한 아이콘 링크 고정 추가 -->
     <link rel="apple-touch-icon" href="yuchan.png?v=1">
     <link rel="shortcut icon" href="yuchan.png?v=1">
     
@@ -29,13 +28,11 @@
             --color-total: #475569;
         }
 
-        /* 💡 당겨서 새로고침 바운스 효과를 자연스럽게 만들기 위해 body 오버플로우 통제 */
         html, body { background-color: var(--bg-color); overscroll-behavior-y: contain; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { color: var(--text-main); line-height: 1.5; padding: 12px; -webkit-font-smoothing: antialiased; }
         .container { max-width: 1000px; margin: 0 auto; position: relative; }
         
-        /* 💡 당겨서 새로고침 인디케이터 스타일 */
         .ptr-element {
             position: absolute; top: -40px; left: 0; width: 100%; height: 40px;
             display: flex; align-items: center; justify-content: center;
@@ -85,19 +82,16 @@
         .pb-card.pb-goal .time { color: var(--color-goal); }
         .pb-card.pb-goal .details { color: #9f1239; font-weight: 700; }
 
-        /* 그래프 영역 */
         .charts-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 20px; }
         @media (min-width: 768px) { .charts-grid { grid-template-columns: repeat(2, 1fr); } }
         
         .chart-section { background: var(--card-bg); padding: 14px; padding-top: 20px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01); }
         .chart-section h2 { font-size: 13px; margin-bottom: 12px; color: #334155; text-align: center; font-weight: 700; }
         
-        /* 필터 탭 메뉴 */
         .tab-menu { display: flex; gap: 6px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .tab-btn { background: #e2e8f0; border: none; padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 700; color: #475569; cursor: pointer; transition: all 0.15s ease; white-space: nowrap; }
         .tab-btn.active { background: #0f172a; color: white; }
 
-        /* 대회별 그룹 카드 레이아웃 */
         .group-container { display: flex; flex-direction: column; gap: 14px; }
         .tournament-group-card { background: var(--card-bg); border-radius: 16px; padding: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.02); }
         
@@ -235,7 +229,6 @@
         return seconds.toFixed(3) + '초';
     }
 
-    // 밀리초 규격을 깔끔하게 맞춰주는 헬퍼 (예: 51.3 -> 51.300)
     function formatRecordString(str) {
         if(!str) return '-';
         const num = timeToSeconds(str);
@@ -243,6 +236,7 @@
         return secondsToTimeString(num);
     }
 
+    // 카드 하단 텍스트용 간소화된 포맷터 (대회명 글자 생략 방지용)
     function cleanTournamentName(name) {
         if(!name) return '-';
         return name.replace(/제|회|쇼트트랙|스피드스케이팅|대회/g, '').trim();
@@ -259,11 +253,10 @@
 
     async function loadSheetData() {
         try {
-            // 초기화(재호출 대비 리셋)
             globalBest333 = Infinity;
             globalBest500 = Infinity;
 
-            const response = await fetch(sheetUrl + '&cachebust=' + new Date().getTime()); // 💡 캐시 방지 코드 탑재
+            const response = await fetch(sheetUrl + '&cachebust=' + new Date().getTime());
             const csvText = await response.text();
             const data = parseCSV(csvText);
 
@@ -342,7 +335,11 @@
         container.innerHTML = '';
 
         const groups = {};
-        rowsToRender.forEach(row => {
+        
+        // 💡 [핵심 조치] 사파리 종목 혼선 및 역순 정렬 오류를 잡기 위해, 루프 돌기 전 원본 로우 배열 자체를 뒤집어 배치합니다.
+        const reversedRows = [...rowsToRender].reverse();
+
+        reversedRows.forEach(row => {
             const [date, tournament, venueLink, eventType, record, rank, note] = row;
             
             if (targetMethod !== 'all' && eventType && !eventType.trim().includes(targetMethod)) {
@@ -357,9 +354,11 @@
                     items: []
                 };
             }
+            // 최신 기록이 위로 가도록 조치
             groups[tournament].items.push({ eventType, record, rank, note });
         });
 
+        // 날짜 객체 연산 기반 최종 재정렬 통제 안전망 가동
         const sortedGroups = Object.values(groups).sort((a, b) => new Date(b.date) - new Date(a.date));
 
         if(sortedGroups.length === 0) {
@@ -397,7 +396,7 @@
                 let badgeClass = item.eventType.includes('333') ? 'e333' : 'e500';
                 
                 let isPB = false;
-                if (item.eventType.includes('333') && sec === globalBest333) isPB = true;
+                if (item.eventType.includes('333' ) && sec === globalBest333) isPB = true;
                 if (item.eventType.includes('500') && sec === globalBest500) isPB = true;
 
                 let rankText = item.rank || '-';
