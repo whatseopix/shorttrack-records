@@ -6,6 +6,10 @@
     <title>유찬이의 쇼트트랙 기록실 ⛸️</title>
     <link rel="manifest" href="manifest.json">
     
+    <!-- 💡 모바일 홈 화면 및 브라우저 캐시 강제 돌파를 위한 아이콘 링크 고정 추가 -->
+    <link rel="apple-touch-icon" href="yuchan.png?v=1">
+    <link rel="shortcut icon" href="yuchan.png?v=1">
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     
@@ -231,6 +235,7 @@
         return seconds.toFixed(3) + '초';
     }
 
+    // 밀리초 규격을 깔끔하게 맞춰주는 헬퍼 (예: 51.3 -> 51.300)
     function formatRecordString(str) {
         if(!str) return '-';
         const num = timeToSeconds(str);
@@ -492,7 +497,7 @@
         if (canvasId === 'chart500') chart500Obj = newChart;
     }
 
-    // 💡 당겨서 새로고침 고성능 스크립트 장착
+    // 당겨서 새로고침 고성능 스크립트 장착
     const mainContainer = document.getElementById('mainContainer');
     const ptrIndicator = document.getElementById('ptrIndicator');
     
@@ -501,7 +506,6 @@
     let isPulling = false;
 
     window.addEventListener('touchstart', (e) => {
-        // 스크롤이 맨 위에 도달했을 때만 작동하도록 통제
         if (window.scrollY === 0) {
             startY = e.touches[0].pageY;
             isPulling = true;
@@ -513,7 +517,7 @@
         currentY = e.touches[0].pageY;
         const diff = currentY - startY;
 
-        if (diff > 0 && diff < 80) { // 최대 80px까지 내려오도록 제한
+        if (diff > 0 && diff < 80) {
             mainContainer.style.transform = `translateY(${diff}px)`;
             ptrIndicator.style.opacity = diff / 80;
             ptrIndicator.style.transform = `translateY(${diff}px)`;
@@ -525,13 +529,11 @@
         isPulling = false;
         const diff = currentY - startY;
 
-        // 50px 이상 아래로 당겼을 때 실시간 새로고침 트리거 가동
         if (diff >= 50) {
             ptrIndicator.innerText = "⚡ 실시간 데이터 동기화 중...";
             mainContainer.style.transform = 'translateY(40px)';
             ptrIndicator.style.transform = 'translateY(40px)';
             
-            // 구글 시트 새로 불러오기 함수 호출
             await loadSheetData();
             
             ptrIndicator.innerText = "✅ 동기화 완료!";
@@ -542,7 +544,6 @@
                 ptrIndicator.innerText = "🔄 당겨서 데이터 동기화 시작...";
             }, 600);
         } else {
-            // 미달 시 원상 복귀
             mainContainer.style.transform = 'none';
             ptrIndicator.style.transform = 'none';
             ptrIndicator.style.opacity = '0';
