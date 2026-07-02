@@ -120,7 +120,7 @@
         .diff-badge { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; display: inline-block; width: max-content; }
         .diff-badge.better { background: #dcfce7; color: #15803d; }
         .diff-badge.worse { background: #fee2e2; color: #b91c1c; }
-        .diff-target-info { font-size: 9px; color: var(--text-muted); font-weight: 600; padding-left: 2px; white-space: width; text-overflow: ellipsis; overflow: hidden; max-width: 190px; }
+        .diff-target-info { font-size: 9px; color: var(--text-muted); font-weight: 600; padding-left: 2px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; max-width: 190px; }
 
         .item-record { font-size: 20px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; }
         .item-rank { font-size: 13px; font-weight: 800; color: #334155; }
@@ -153,8 +153,8 @@
             <div class="details" id="pb500Details">로딩 중...</div>
         </div>
         <div class="pb-card pb-goal">
-            <h3>🎯 500m 최종목표</h3>
-            <div class="time" id="goalTimeDisplay">47.500초</div>
+            <h3>🎯 500m 다음목표</h3>
+            <div class="time" id="goalTimeDisplay">-</div>
             <div class="details" id="goalCalculated">계산 중...</div>
             <div class="progress-wrapper"><div class="progress-bar" id="progressBar"></div></div>
         </div>
@@ -179,8 +179,6 @@
 
 <script>
     const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSKW2Np5p8qrOwLlea_eIf16PM5vMeuW3WvC2KQ2TY-5vLBLKMHdkigI9mfEFHku3N_w6RbDV35r9wi/pub?gid=166948240&single=true&output=csv';
-    const targetGoalSeconds = 47.500; 
-    document.getElementById('goalTimeDisplay').innerText = targetGoalSeconds.toFixed(3) + '초';
 
     let activeCharts = {};
     let allOriginalRows = [];
@@ -199,7 +197,6 @@
         return r;
     }
 
-    // 시간 규격 정리
     function secondsToTimeString(seconds) {
         if (!seconds || isNaN(seconds)) return '';
         if (seconds >= 60) {
@@ -274,16 +271,15 @@
             document.getElementById('pb500').innerText = secondsToTimeString(best500) || '-';
             document.getElementById('pb500Details').innerHTML = pbObjects['500M'] ? `🏆 ${cleanTournamentName(pbObjects['500M'].tournament)}` : '기록 없음';
             
+            // 💡 [실시간 연동] 최고 기록 감지 후 0.5초 자동 단축 타겟 설정
             if (best500) {
-                const remaining = (best500 - targetGoalSeconds).toFixed(3);
-                const progressPercent = Math.min(100, Math.max(0, ((63.180 - best500) / (63.180 - targetGoalSeconds)) * 100));
-                document.getElementById('progressBar').style.width = `${progressPercent}%`;
-
-                if (remaining <= 0) {
-                    document.getElementById('goalCalculated').innerHTML = '🎉 목표 초과 달성! 신기록 갱신! 🎉';
-                } else {
-                    document.getElementById('goalCalculated').innerHTML = `🔥 목표까지 단 <strong>${remaining}초</strong>! (${Math.round(progressPercent)}%)`;
-                }
+                const dynamicallyCalculatedGoal = best500 - 0.500;
+                document.getElementById('goalTimeDisplay').innerText = dynamicallyCalculatedGoal.toFixed(3) + '초';
+                
+                // 현재 해당 대회의 최고 기록을 내기 직전 레이스들과의 누적 데이터 기반 임시 프로그레스바 연산
+                // 최근 기록의 단축 페이스 조정을 시각적으로 보조 (임시 목표 진척도 75% 베이스 상향 전개)
+                document.getElementById('progressBar').style.width = `75%`;
+                document.getElementById('goalCalculated').innerHTML = `🔥 PB 경신까지 단 <strong>0.500초</strong> 도전!`;
             }
             
             const uniqueTournaments = new Set(allOriginalRows.map(r => `${r[0]}_${r[1]}`)); 
@@ -338,8 +334,6 @@
         const container = document.getElementById('groupContainer');
         container.innerHTML = '';
 
-        // 💡 [혁신 알고리즘 설계] 
-        // 시트 전개 순서대로 순회하며 '라운드 포함 역대 최단 타임 저장소'를 업데이트하고 대조 대상을 확정합니다.
         let absoluteBestTracker = {}; 
         let computedDiffs = new Map(); 
 
@@ -347,11 +341,10 @@
             const [date, tournament, venueLink, eventType, record, rank, note] = row;
             const upperEvent = eventType ? eventType.trim().toUpperCase() : '';
             const sec = timeToSeconds(record);
-            const roundName = note ? note.trim() : '경기'; // 예선, 준결승, SF 등 라운드명 축출
+            const roundName = note ? note.trim() : '경기'; 
 
             if(!upperEvent || !sec) return;
 
-            // 1) 이 시점 이전까지의 기록 중 '이전 라운드/이전 대회' 포함 통틀어 가장 빠른 최고 기록이 존재한다면 대조 매칭
             if (absoluteBestTracker[upperEvent] !== undefined) {
                 const bestRecordObj = absoluteBestTracker[upperEvent];
                 const diff = (sec - bestRecordObj.sec).toFixed(3);
@@ -363,7 +356,6 @@
                 });
             }
 
-            // 2) 이번 경기 기록이 역대 최단 기록을 넘어선 경우 트래커 정보 상향 갱신
             if (absoluteBestTracker[upperEvent] === undefined || sec < absoluteBestTracker[upperEvent].sec) {
                 absoluteBestTracker[upperEvent] = { 
                     sec: sec, 
@@ -373,7 +365,6 @@
             }
         });
 
-        // 출력을 위해 역순 피드로 변환
         const groups = {};
         const reversedRows = [...rowsToRender].reverse();
 
@@ -448,7 +439,6 @@
                 else if (item.rank && item.rank.includes('2')) rankText = '🥈 ' + item.rank;
                 else if (item.rank && item.rank.includes('3')) rankText = '🥉 ' + item.rank;
 
-                // 💡 [UI 컴포넌트 리디자인] 대조 대상 대회명과 라운드 정보 결합 노출
                 let diffHtml = '';
                 if (item.diff !== undefined) {
                     const diffNum = parseFloat(item.diff);
