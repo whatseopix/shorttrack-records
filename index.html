@@ -107,7 +107,7 @@
         .group-record-item:last-child { border-bottom: none; padding-bottom: 0; }
         
         .item-top { display: flex; justify-content: space-between; align-items: center; }
-        .item-meta { display: flex; gap: 6px; align-items: center; }
+        .item-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
         
         .event-badge { font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 6px; }
         .event-badge.e333 { background: var(--color-333-bg); color: var(--color-333); border: 1px solid #ffe0cc; }
@@ -116,9 +116,11 @@
         
         .pb-badge { background: #ef4444; color: white; font-size: 9px; font-weight: bold; padding: 1px 5px; border-radius: 4px; }
         
-        .diff-badge { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; margin-left: 4px; }
+        .diff-container { display: inline-flex; flex-direction: column; gap: 1px; }
+        .diff-badge { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; display: inline-block; width: max-content; }
         .diff-badge.better { background: #dcfce7; color: #15803d; }
         .diff-badge.worse { background: #fee2e2; color: #b91c1c; }
+        .diff-target-info { font-size: 9px; color: var(--text-muted); font-weight: 600; padding-left: 2px; white-space: nowrap; }
 
         .item-record { font-size: 20px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; }
         .item-rank { font-size: 13px; font-weight: 800; color: #334155; }
@@ -261,7 +263,7 @@
                 }
 
                 if (!datasets[eventType]) datasets[eventType] = [];
-                datasets[eventType].push({ date, sec });
+                datasets[eventType].push({ date, tournament, sec });
             });
 
             document.getElementById('pb333').innerText = formatRecordString(pbObjects['333M']?.record || pbObjects['333m']?.record);
@@ -283,7 +285,7 @@
                 }
             }
             
-            const uniqueTournaments = new Set(allOriginalRows.map(r => `${r[0]}_${r[1]}`)); // 💡 출전 대회 수도 날짜+대회명 조합으로 고유 카운트
+            const uniqueTournaments = new Set(allOriginalRows.map(r => `${r[0]}_${r[1]}`)); 
             document.getElementById('totalRaces').innerText = uniqueTournaments.size + '개 대회 출전';
 
             const tabMenuContainer = document.getElementById('dynamicTabMenu');
@@ -301,14 +303,29 @@
             mainEvents.forEach(evt => {
                 const chartSec = document.createElement('div');
                 chartSec.className = 'chart-section';
-                chartSec.innerHTML = `<h2>📈 ${evt} 기록 추이 변화</h2><canvas id="canvas-${evt}"></canvas>`;
+                chartSec.innerHTML = `<h2>📈 ${evt} 대회별 최고기록 추이</h2><canvas id="canvas-${evt}"></canvas>`;
                 chartsGrid.appendChild(chartSec);
 
-                let chartData = datasets[evt].sort((a,b) => new Date(a.date) - new Date(b.date));
+                // 💡 [핵심 알고리즘 수정] 동일 대회 그룹핑 후 각 대회별 '최고 기록(최소 초수)' 1개만 추출
+                let tourGroupMap = {};
+                datasets[evt].forEach(item => {
+                    const groupKey = `${item.date}_${item.tournament}`;
+                    if (!tourGroupMap[groupKey] || item.sec < tourGroupMap[groupKey].sec) {
+                        tourGroupMap[groupKey] = item;
+                    }
+                });
+
+                // 추출한 대회 최고기록 리스트를 과거 날짜 순으로 정렬
+                let filteredChartData = Object.values(tourGroupMap).sort((a,b) => new Date(a.date) - new Date(b.date));
+                
+                // 가로축 라벨을 날짜 대신 정제된 '대회명'으로 맵핑
+                let chartLabels = filteredChartData.map(d => cleanTournamentName(d.tournament));
+                let chartValues = filteredChartData.map(d => d.sec);
+
                 let color = evt.includes('333') ? '#ff7a00' : '#00b4d8';
                 let bg = evt.includes('333') ? 'rgba(255, 122, 0, 0.04)' : 'rgba(0, 180, 216, 0.04)';
                 
-                renderChart(`canvas-${evt}`, chartData.map(d => d.date), chartData.map(d => d.sec), color, bg, evt);
+                renderChart(`canvas-${evt}`, chartLabels, chartValues, color, bg, evt);
             });
 
             renderGroupedCards(allOriginalRows);
@@ -324,14 +341,13 @@
         container.innerHTML = '';
 
         let raceHistoryTracker = {}; 
+        let crossTournamentTracker = {}; 
         let computedDiffs = new Map(); 
 
         rowsToRender.forEach((row, globalIdx) => {
             const [date, tournament, venueLink, eventType, record] = row;
             const upperEvent = eventType ? eventType.trim().toUpperCase() : '';
             const sec = timeToSeconds(record);
-            
-            // 💡 [핵심수정] 연도가 다른 동일 이름 대회를 엄격히 격리하기 위해 식별키를 [날짜_대회명] 조합으로 완전 교체
             const matchKey = `${date}_${tournament}`; 
 
             if(!upperEvent || !sec) return;
@@ -339,12 +355,19 @@
             if(!raceHistoryTracker[matchKey]) raceHistoryTracker[matchKey] = {};
             
             if(raceHistoryTracker[matchKey][upperEvent] !== undefined) {
-                const prevSec = raceHistoryTracker[matchKey][upperEvent];
+                const prevSec = raceHistoryTracker[matchKey][upperEvent].sec;
                 const diff = (sec - prevSec).toFixed(3);
-                computedDiffs.set(globalIdx, diff);
+                computedDiffs.set(globalIdx, { diff, targetName: '이전 라운드' });
+            } 
+            else if(crossTournamentTracker[upperEvent] !== undefined) {
+                const prevSec = crossTournamentTracker[upperEvent].sec;
+                const prevTour = crossTournamentTracker[upperEvent].tournament;
+                const diff = (sec - prevSec).toFixed(3);
+                computedDiffs.set(globalIdx, { diff, targetName: cleanTournamentName(prevTour) });
             }
             
-            raceHistoryTracker[matchKey][upperEvent] = sec;
+            raceHistoryTracker[matchKey][upperEvent] = { sec, tournament };
+            crossTournamentTracker[upperEvent] = { sec, tournament };
         });
 
         const groups = {};
@@ -357,25 +380,24 @@
             
             if (targetMethod !== 'all' && upperEvent !== targetMethod) return;
 
-            // 💡 [핵심수정] 그룹 바구니 생성 및 추적할 때도 [날짜_대회명] 조합의 유니크 키를 사용하여 완벽 분리
             const groupKey = `${date}_${tournament}`;
 
             if (!groups[groupKey]) {
                 groups[groupKey] = { tournament, date, venueLink, items: [] };
             }
 
-            const savedDiff = computedDiffs.get(originalGlobalIdx);
+            const savedDiffObj = computedDiffs.get(originalGlobalIdx);
 
             groups[groupKey].items.push({ 
                 eventType: upperEvent, 
                 record, 
                 rank, 
                 note,
-                diff: savedDiff
+                diff: savedDiffObj ? savedDiffObj.diff : undefined,
+                targetName: savedDiffObj ? savedDiffObj.targetName : undefined
             });
         });
 
-        // 날짜 기준 내림차순(최신순) 정렬 보장
         const sortedGroups = Object.values(groups).sort((a, b) => new Date(b.date) - new Date(a.date));
 
         if(sortedGroups.length === 0) {
@@ -425,9 +447,19 @@
                 if (item.diff !== undefined) {
                     const diffNum = parseFloat(item.diff);
                     if (diffNum < 0) {
-                        diffHtml = `<span class="diff-badge better">단축 ${Math.abs(diffNum).toFixed(3)}초 ▲</span>`;
+                        diffHtml = `
+                            <div class="diff-container">
+                                <span class="diff-badge better">단축 ${Math.abs(diffNum).toFixed(3)}초 ▲</span>
+                                <span class="diff-target-info">vs ${item.targetName}</span>
+                            </div>
+                        `;
                     } else if (diffNum > 0) {
-                        diffHtml = `<span class="diff-badge worse">+${diffNum.toFixed(3)}초 ▼</span>`;
+                        diffHtml = `
+                            <div class="diff-container">
+                                <span class="diff-badge worse">+${diffNum.toFixed(3)}초 ▼</span>
+                                <span class="diff-target-info">vs ${item.targetName}</span>
+                            </div>
+                        `;
                     }
                 }
 
@@ -494,10 +526,18 @@
                 responsive: true,
                 maintainAspectRatio: true,
                 aspectRatio: isMobile ? 1.6 : 2.5,
-                layout: { padding: { top: 24, left: 8, right: 8, bottom: 4 } },
+                layout: { padding: { top: 24, left: 8, right: 12, bottom: 12 } },
                 scales: {
                     y: { display: false, grid: { display: false } },
-                    x: { grid: { display: false }, ticks: { font: { size: 10, weight: '600' }, color: '#94a3b8' } }
+                    x: { 
+                        grid: { display: false }, 
+                        ticks: { 
+                            font: { size: isMobile ? 9 : 10, weight: '700' }, 
+                            color: '#64748b',
+                            maxRotation: isMobile ? 45 : 30, // 💡 모바일 환경에서 겹침 현상 예방용 라벨 회전 설정
+                            minRotation: isMobile ? 45 : 0
+                        } 
+                    }
                 },
                 plugins: {
                     legend: { display: false },
