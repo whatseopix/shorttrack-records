@@ -214,9 +214,30 @@
         return secondsToTimeString(num);
     }
 
-    function cleanTournamentName(name) {
+    // 💡 [날짜 포함 확장 개편] 그래프 X축 가독성 훼손을 막기 위해 [MM.DD] 축약 포맷을 리턴하는 정제기
+    function cleanTournamentName(name, dateStr) {
         if(!name) return '-';
-        return name.replace(/(?:제|회|쇼트트랙|스피드스케이팅)$/g, '').replace(/대회$/g, '').trim();
+        let cleanName = name.replace(/(?:쇼트트랙|스피드스케이팅)$/g, '').replace(/(?:대회|배|전)$/g, '').trim();
+        
+        // 연도 정보(구글 시트에 수동 입력하신 2026 등) 뒤에 [월.일]만 추출하여 병합
+        if (dateStr && dateStr.includes('.')) {
+            const parts = dateStr.split('.');
+            if (parts.length >= 3) {
+                return `${cleanName} [${parts[1]}.${parts[2]}]`;
+            }
+        } else if (dateStr && dateStr.includes('-')) { // 혹시 하이픈 규격일 경우 대비 예외처리
+            const parts = dateStr.split('-');
+            if (parts.length >= 3) {
+                return `${cleanName} [${parts[1]}.${parts[2]}]`;
+            }
+        }
+        return cleanName;
+    }
+
+    // 단순 목록 전용 꼬리표 클리너
+    function cleanListTournamentName(name) {
+        if(!name) return '-';
+        return name.replace(/(?:쇼트트랙|스피드스케이팅)$/g, '').replace(/(?:대회|배|전)$/g, '').trim();
     }
 
     function timeToSeconds(timeStr) {
@@ -265,19 +286,15 @@
             });
 
             document.getElementById('pb333').innerText = formatRecordString(pbObjects['333M']?.record || pbObjects['333m']?.record);
-            document.getElementById('pb333Details').innerHTML = pbObjects['333M'] ? `🏆 ${cleanTournamentName(pbObjects['333M'].tournament)}` : '기록 없음';
+            document.getElementById('pb333Details').innerHTML = pbObjects['333M'] ? `🏆 ${cleanListTournamentName(pbObjects['333M'].tournament)}` : '기록 없음';
 
             const best500 = globalBestTimes['500M'] || globalBestTimes['500m'];
             document.getElementById('pb500').innerText = secondsToTimeString(best500) || '-';
-            document.getElementById('pb500Details').innerHTML = pbObjects['500M'] ? `🏆 ${cleanTournamentName(pbObjects['500M'].tournament)}` : '기록 없음';
+            document.getElementById('pb500Details').innerHTML = pbObjects['500M'] ? `🏆 ${cleanListTournamentName(pbObjects['500M'].tournament)}` : '기록 없음';
             
-            // 💡 [실시간 연동] 최고 기록 감지 후 0.5초 자동 단축 타겟 설정
             if (best500) {
                 const dynamicallyCalculatedGoal = best500 - 0.500;
                 document.getElementById('goalTimeDisplay').innerText = dynamicallyCalculatedGoal.toFixed(3) + '초';
-                
-                // 현재 해당 대회의 최고 기록을 내기 직전 레이스들과의 누적 데이터 기반 임시 프로그레스바 연산
-                // 최근 기록의 단축 페이스 조정을 시각적으로 보조 (임시 목표 진척도 75% 베이스 상향 전개)
                 document.getElementById('progressBar').style.width = `75%`;
                 document.getElementById('goalCalculated').innerHTML = `🔥 PB 경신까지 단 <strong>0.500초</strong> 도전!`;
             }
@@ -313,13 +330,15 @@
 
                 let filteredChartData = Object.values(tourGroupMap).sort((a,b) => new Date(a.date) - new Date(b.date));
                 
-                let chartLabels = filteredChartData.map(d => cleanTournamentName(d.tournament));
+                // 💡 [라벨 고도화 빌드] 대회 명칭 정제 시 날짜 인자(d.date)를 전달하여 월.일 대괄호화
+                let chartLabels = filteredChartData.map(d => cleanTournamentName(d.tournament, d.date));
                 let chartValues = filteredChartData.map(d => d.sec);
+                let chartFullDates = filteredChartData.map(d => d.date); // 💡 손가락 터치 시 뜰 전체 날짜 보관함
 
                 let color = evt.includes('333') ? '#ff7a00' : '#00b4d8';
                 let bg = evt.includes('333') ? 'rgba(255, 122, 0, 0.04)' : 'rgba(0, 180, 216, 0.04)';
                 
-                renderChart(`canvas-${evt}`, chartLabels, chartValues, color, bg, evt);
+                renderChart(`canvas-${evt}`, chartLabels, chartValues, color, bg, evt, chartFullDates);
             });
 
             renderGroupedCards(allOriginalRows);
@@ -351,7 +370,7 @@
                 
                 computedDiffs.set(globalIdx, { 
                     diff: diff, 
-                    targetTournament: cleanTournamentName(bestRecordObj.tournament),
+                    targetTournament: cleanListTournamentName(bestRecordObj.tournament),
                     targetRound: bestRecordObj.round
                 });
             }
@@ -494,9 +513,9 @@
         }
     }
 
-    function renderChart(canvasId, labels, data, themeColor, bgColor, evtKey) {
+    // 💡 [툴팁 엔진 심기] 전체 날짜 데이터 팝업 동적 트리거 기능 이식
+    function renderChart(canvasId, labels, data, themeColor, bgColor, evtKey, fullDates = []) {
         if (activeCharts[evtKey]) { activeCharts[evtKey].destroy(); }
-
         const ctx = document.getElementById(canvasId).getContext('2d');
         const isMobile = window.innerWidth < 500;
 
@@ -537,6 +556,24 @@
                 },
                 plugins: {
                     legend: { display: false },
+                    // 💡 [고도화 툴팁] 모바일에서 점을 터치하면 구글 시트 원본 날짜 포맷이 그대로 팝업 노출됩니다.
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        titleFont: { size: 12, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        padding: 10,
+                        borderRadius: 8,
+                        callbacks: {
+                            title: function(context) {
+                                const idx = context[0].dataIndex;
+                                return fullDates[idx] ? `📅 경기일: ${fullDates[idx]}` : context[0].label;
+                            },
+                            label: function(context) {
+                                return `⏱️ 최고기록: ${context.parsed.y.toFixed(3)}초`;
+                            }
+                        }
+                    },
                     datalabels: {
                         align: 'top', anchor: 'end',
                         backgroundColor: themeColor, borderRadius: 6, color: 'white',
