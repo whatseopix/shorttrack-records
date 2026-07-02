@@ -1,599 +1,514 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>유찬이의 쇼트트랙 기록실 ⛸️</title>
-    <link rel="manifest" href="manifest.json">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>통합 자산관리 Dashboard</title>
+  <!-- 부트스트랩 5 CSS CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- 프리텐다드 폰트 적용 -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <style>
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      background-color: #091224 !important; /* 💙 업비트 시그니처 다크 네이비 */
+      color: #ffffff !important;
+      padding-top: 1rem;
+      padding-bottom: 3rem;
+      overscroll-behavior-y: contain; 
+    }
+    .container { max-width: 800px; }
     
-    <link rel="apple-touch-icon" href="yuchan.png?v=1">
-    <link rel="shortcut icon" href="yuchan.png?v=1">
+    /* 🔒 잠금 화면 UI */
+    #lockScreen {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background-color: #091224; z-index: 9999;
+      display: flex; justify-content: center; align-items: center; padding: 20px;
+    }
+    .lock-box {
+      background-color: #0b162c; border: 1px solid #1a2e56; 
+      padding: 3rem 2rem; border-radius: 12px; width: 100%; max-width: 420px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); position: relative;
+    }
+    .lock-logo { font-size: 1.5rem; font-weight: 800; color: #418df1; letter-spacing: -0.5px; margin-bottom: 0.5rem; }
+    .lock-input {
+      background: #111e36 !important; color: #ffffff !important; border: 1px solid #223a66 !important;
+      text-align: center; font-size: 1.3rem; letter-spacing: 6px; padding: 0.75rem !important; border-radius: 6px !important;
+    }
+    .lock-input:focus { border-color: #418df1 !important; box-shadow: 0 0 0 3px rgba(65, 141, 241, 0.2) !important; }
+    .lock-btn { 
+      background-color: #418df1 !important; border: none !important; font-weight: 700; color: #ffffff !important; 
+      padding: 0.85rem !important; font-size: 1rem; border-radius: 6px !important;
+    }
+    .error-msg { background-color: rgba(225, 82, 65, 0.1); border: 1px solid rgba(225, 82, 65, 0.3); color: #f27263; padding: 0.6rem; border-radius: 6px; font-size: 0.85rem; margin-top: 1rem; }
+    .build-version { position: absolute; bottom: 12px; right: 16px; font-size: 0.7rem; color: #4e5b73; font-weight: 600; letter-spacing: 0.5px; }
+
+    /* ⚡ 업비트 스타일 최상단 메인 탭 메뉴 (3분할 확장) */
+    .main-nav-tabs {
+      display: flex; background-color: #0b162c; border: 1px solid #172443; border-radius: 8px; padding: 4px; margin-bottom: 1.5rem;
+    }
+    .nav-tab-btn {
+      flex: 1; background: transparent; border: none; color: #9aa5b5; font-weight: 700; padding: 0.75rem; font-size: 0.85rem; border-radius: 6px; transition: all 0.2s;
+    }
+    .nav-tab-btn:hover { color: #ffffff; }
+    .nav-tab-btn.active { background-color: #111e36; color: #418df1; border: 1px solid #172443; }
+
+    /* 대시보드 UI 스타일 */
+    .main-total-banner { background-color: #0b162c !important; border: 1px solid #172443 !important; border-radius: 8px; padding: 1.5rem 1.25rem; margin-bottom: 1rem; }
+    .sync-status { display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; font-weight: 600; color: #00e676 !important; white-space: nowrap; }
+    .sync-dot { width: 6px; height: 6px; background-color: #00e676; border-radius: 50%; box-shadow: 0 0 6px #00e676; animation: blink 2s infinite; }
+    @keyframes blink { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+    /* 📊 가계 알짜 순자산 서브 패널 */
+    .net-worth-sub-banner {
+      background-color: #111e36; border-radius: 6px; padding: 0.75rem 1rem; font-size: 0.85rem; font-weight: 600; color: #9aa5b5; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 576px) {
+      #grandTotalDisplay { font-size: 1.8rem !important; }
+      .sync-status { font-size: 0.7rem; }
+      .nav-tab-btn { font-size: 0.75rem; padding: 0.6rem 0.2rem; }
+    }
+
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; }
+    .grid-item { background-color: #0b162c !important; border: 1px solid #172443 !important; padding: 1rem; border-radius: 6px; border-top: 4px solid #58697f; }
+    .grid-item .title { font-size: 0.8rem; font-weight: 600; color: #9aa5b5 !important; margin-bottom: 0.25rem; }
+    .grid-item .amount { font-size: 1.05rem; font-weight: 700; color: #ffffff !important; }
+    .grid-item .percent { font-size: 0.75rem; color: #6cb1ff; font-weight: 500; margin-left: 4px; }
+
+    /* 포인트 컬러 보더 */
+    .accent-투자, .accent-유동자산 { border-top-color: #e15241 !important; } 
+    .accent-예금, .accent-비유동자산 { border-top-color: #418df1 !important; } 
+    .accent-보험 { border-top-color: #26a69a !important; } 
+    .accent-연금 { border-top-color: #ffb300 !important; } 
+    .accent-유동부채 { border-top-color: #5b86c4 !important; }
+    .accent-비유동부채 { border-top-color: #2b4b7e !important; }
+    .accent-기타자산, .accent-기타부채 { border-top-color: #78889b !important; }
+
+    .filter-sort-row { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; margin-bottom: 0.5rem; gap: 10px; flex-wrap: wrap; }
+    .filter-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+    .filter-btn { background: #111e36; border: 1px solid #172443; color: #9aa5b5; padding: 0.4rem 0.8rem; font-size: 0.8rem; font-weight: 600; border-radius: 4px; }
+    .filter-btn.active { background: #1e3152; color: #ffffff; border-color: #418df1; }
+    .sort-select { background: #111e36; color: #ffffff; border: 1px solid #172443; padding: 0.4rem 1.8rem 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 4px; cursor: pointer; }
+
+    .table-container { background-color: #0b162c !important; border: 1px solid #172443 !important; border-radius: 8px; padding: 1rem; }
+    .table { margin-bottom: 0; background-color: transparent !important; }
+    .table th { font-weight: 600; color: #9aa5b5 !important; background-color: #111e36 !important; border-bottom: 1px solid #172443 !important; padding: 0.75rem 0.5rem; font-size: 0.85rem; white-space: nowrap; }
+    .table td { padding: 0.85rem 0.5rem; border-bottom: 1px solid #172443 !important; color: #ffffff !important; background-color: transparent !important; font-size: 0.9rem; white-space: nowrap; }
+    .table-hover tbody tr:hover td { background-color: #152441 !important; }
+
+    .badge-asset { font-weight: 600; padding: 0.25rem 0.45rem; border-radius: 2px; font-size: 0.75rem; }
+    .badge-투자, .badge-유동자산 { background-color: rgba(225, 82, 65, 0.2) !important; color: #f27263 !important; }
+    .badge-예금, .badge-비유동자산 { background-color: rgba(65, 141, 241, 0.2) !important; color: #6cb1ff !important; }
+    .badge-보험 { background-color: rgba(38, 166, 154, 0.2) !important; color: #4db6ac !important; }
+    .badge-연금 { background-color: rgba(255, 179, 0, 0.2) !important; color: #ffd54f !important; }
+    .badge-유동부채 { background-color: rgba(91, 134, 196, 0.2) !important; color: #8cb4ec !important; }
+    .badge-비유동부채 { background-color: rgba(43, 75, 126, 0.2) !important; color: #5c7fb8 !important; }
+    .badge-기타 { background-color: rgba(120, 136, 155, 0.2) !important; color: #b0bec5 !important; }
+    .section-title { font-size: 0.85rem; font-weight: 700; color: #9aa5b5 !important; }
     
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-    
-    <style>
-        :root {
-            --bg-color: #f4f7fa;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            
-            --color-333: #ff7a00;
-            --color-333-bg: #fff5ec;
-            --color-500: #00b4d8;
-            --color-500-bg: #f0faff;
-            --color-multi: #8b5cf6;
-            --color-multi-bg: #f5f3ff;
-            --color-goal: #e11d48;
-            --color-total: #475569;
-        }
-
-        html, body { background-color: var(--bg-color); overscroll-behavior-y: contain; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { color: var(--text-main); line-height: 1.5; padding: 12px; -webkit-font-smoothing: antialiased; }
-        .container { max-width: 1000px; margin: 0 auto; position: relative; }
-        
-        .ptr-element {
-            position: absolute; top: -40px; left: 0; width: 100%; height: 40px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 12px; font-weight: 700; color: #2563eb;
-            opacity: 0; transition: transform 0.1s ease, opacity 0.1s ease;
-            z-index: 999;
-        }
-
-        header { text-align: center; padding: 16px 10px; background: #0f172a; color: white; border-radius: 16px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        header h1 { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
-        header p { font-size: 11px; opacity: 0.6; margin-top: 2px; }
-        
-        .pb-container { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
-            gap: 10px; 
-            margin-bottom: 16px; 
-        }
-        
-        @media (min-width: 768px) { .pb-container { grid-template-columns: repeat(4, 1fr); gap: 12px; } }
-        
-        .pb-card { 
-            background: var(--card-bg); 
-            padding: 12px 10px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01), 0 2px 4px -1px rgba(0,0,0,0.01); 
-            border: 1px solid var(--border-color); 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: space-between; 
-        }
-        
-        .pb-card.pb-333 { border-top: 4px solid var(--color-333); }
-        .pb-card.pb-500 { border-top: 4px solid var(--color-500); }
-        .pb-card.pb-goal { border-top: 4px solid var(--color-goal); background: linear-gradient(to bottom, #fff, #fff1f2); }
-        .pb-card.pb-total { border-top: 4px solid var(--total-color, var(--color-total)); }
-        
-        .pb-card h3 { font-size: 11.5px; color: var(--text-muted); font-weight: 700; margin-bottom: 2px; letter-spacing: -0.3px; }
-        .pb-card .time { font-size: 21px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 4px; }
-        .pb-card .details { font-size: 10.5px; color: var(--text-muted); line-height: 1.3; padding-top: 4px; border-top: 1px dashed var(--border-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
-        .pb-card.pb-goal .time { color: var(--color-goal); }
-        .pb-card.pb-goal .details { color: #9f1239; font-weight: 700; }
-
-        .progress-wrapper { width: 100%; background: #e2e8f0; height: 6px; border-radius: 99px; margin-top: 4px; overflow: hidden; }
-        .progress-bar { background: var(--color-goal); height: 100%; width: 0%; transition: width 0.5s ease; }
-
-        .charts-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 20px; }
-        @media (min-width: 768px) { .charts-grid { grid-template-columns: repeat(2, 1fr); } }
-        
-        .chart-section { background: var(--card-bg); padding: 14px; padding-top: 20px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01); }
-        .chart-section h2 { font-size: 13px; margin-bottom: 12px; color: #334155; text-align: center; font-weight: 700; }
-        
-        .tab-menu { display: flex; gap: 6px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .tab-btn { background: #e2e8f0; border: none; padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 700; color: #475569; cursor: pointer; transition: all 0.15s ease; white-space: nowrap; }
-        .tab-btn.active { background: #0f172a; color: white; }
-
-        .group-container { display: flex; flex-direction: column; gap: 14px; }
-        .tournament-group-card { background: var(--card-bg); border-radius: 16px; padding: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.02); }
-        
-        .group-header { padding-bottom: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: flex-start; }
-        .group-title { display: flex; flex-direction: column; gap: 2px; }
-        .group-name { font-size: 14px; font-weight: 800; color: #0f172a; }
-        .group-date { font-size: 11px; color: var(--text-muted); font-weight: 600; }
-        
-        .group-venue-text { font-size: 12px; color: var(--text-muted); font-weight: 600; }
-        .group-venue-link { font-size: 11px; color: #166534; text-decoration: none; font-weight: 700; background: #f0fdf4; padding: 2px 6px; border-radius: 6px; border: 1px solid #bbf7d0; }
-
-        .group-record-item { display: flex; flex-direction: column; padding: 10px 0; border-bottom: 1px dashed var(--border-color); gap: 4px; }
-        .group-record-item:last-child { border-bottom: none; padding-bottom: 0; }
-        
-        .item-top { display: flex; justify-content: space-between; align-items: center; }
-        .item-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-        
-        .event-badge { font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 6px; }
-        .event-badge.e333 { background: var(--color-333-bg); color: var(--color-333); border: 1px solid #ffe0cc; }
-        .event-badge.e500 { background: var(--color-500-bg); color: var(--color-500); border: 1px solid #c7f0ff; }
-        .event-badge.e-multi { background: var(--color-multi-bg); color: var(--color-multi); border: 1px solid #ddd6fe; }
-        
-        .pb-badge { background: #ef4444; color: white; font-size: 9px; font-weight: bold; padding: 1px 5px; border-radius: 4px; }
-        
-        .diff-container { display: inline-flex; flex-direction: column; gap: 1px; }
-        .diff-badge { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; display: inline-block; width: max-content; }
-        .diff-badge.better { background: #dcfce7; color: #15803d; }
-        .diff-badge.worse { background: #fee2e2; color: #b91c1c; }
-        .diff-target-info { font-size: 9px; color: var(--text-muted); font-weight: 600; padding-left: 2px; white-space: nowrap; }
-
-        .item-record { font-size: 20px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; }
-        .item-rank { font-size: 13px; font-weight: 800; color: #334155; }
-        
-        .item-note { font-size: 12px; color: #334155; background: #f8fafc; padding: 8px 12px; border-radius: 8px; margin-top: 2px; border: 1px solid var(--border-color); font-weight: 500; }
-
-        footer { text-align: center; margin-top: 30px; font-size: 11px; color: var(--text-muted); padding: 10px 0; }
-        .loading { text-align: center; padding: 40px; font-weight: bold; color: var(--text-muted); font-size: 13px; }
-    </style>
+    /* 📈 금리 텍스트 전용 스타일 */
+    .rate-text { color: #f27263; font-weight: 600; font-size: 0.85rem; margin-left: 6px; }
+  </style>
 </head>
 <body>
 
-<div class="container" id="mainContainer">
-    <div id="ptrIndicator" class="ptr-element">🔄 당겨서 데이터 동기화 시작...</div>
+  <!-- 🔒 잠금 화면 -->
+  <div id="lockScreen">
+    <div class="lock-box text-center">
+      <div class="lock-logo">UPBIT STYLE DASHBOARD</div>
+      <h5 class="text-white fw-bold mb-2">보안 인증 시스템</h5>
+      <p class="small mb-4" style="color: #9aa5b5;">금융 데이터 보호를 위해 비밀번호를 입력해 주세요.</p>
+      <input type="password" id="passwordInput" class="form-control lock-input mb-4" placeholder="••••" maxlength="8" onkeydown="if(event.key==='Enter') verifyPassword()">
+      <button class="btn btn-primary w-100 lock-btn" onclick="verifyPassword()">인증 및 자산 동기화</button>
+      <div id="lockError" class="error-msg d-none">❌ 비밀번호가 올바르지 않습니다. 다시 입력하세요.</div>
+      <div class="build-version">BUILD v1.6.2</div>
+    </div>
+  </div>
 
-    <header>
-        <h1>유찬이의 쇼트트랙 기록실  Skating App</h1>
-        <p>구글 시트 데이터 연동 실시간 대시보드</p>
-    </header>
-
-    <div class="pb-container">
-        <div class="pb-card pb-333">
-            <h3>333m 최고기록</h3>
-            <div class="time" id="pb333">-</div>
-            <div class="details" id="pb333Details">로딩 중...</div>
-        </div>
-        <div class="pb-card pb-500">
-            <h3>500m 최고기록</h3>
-            <div class="time" id="pb500">-</div>
-            <div class="details" id="pb500Details">로딩 중...</div>
-        </div>
-        <div class="pb-card pb-goal">
-            <h3>🎯 500m 최종목표</h3>
-            <div class="time" id="goalTimeDisplay">47.500초</div>
-            <div class="details" id="goalCalculated">계산 중...</div>
-            <div class="progress-wrapper"><div class="progress-bar" id="progressBar"></div></div>
-        </div>
-        <div class="pb-card pb-total">
-            <h3>총 출전 대회</h3>
-            <div class="time" id="totalRaces" style="color: #475569;">-</div>
-            <div class="details" style="text-align: center; font-weight: 700; color: #2563eb;">유찬이 파이팅! 🔥</div>
-        </div>
+  <!-- 🏆 메인 대시보드 -->
+  <div class="container d-none" id="mainDashboard">
+    
+    <div class="main-nav-tabs" id="mainNavTabs">
+      <button class="nav-tab-btn active" onclick="switchMainTab('sheet1')">MY ASSET</button>
+      <button class="nav-tab-btn" onclick="switchMainTab('sheet2')">OUR ASSET</button>
+      <button class="nav-tab-btn" onclick="switchMainTab('sheet3')">DEBT</button>
     </div>
 
-    <div class="charts-grid" id="dynamicChartsGrid"></div>
-    <div class="tab-menu" id="dynamicTabMenu"></div>
-
-    <div id="groupContainer" class="group-container">
-        <div class="loading">유찬이의 경기 기록을 분류하고 있습니다...</div>
+    <div class="main-total-banner">
+      <div class="row align-items-center">
+        <div class="col-7 col-sm-8 text-start">
+          <div class="small fw-medium mb-1" id="totalBannerTitle">총 보유자산</div>
+          <div class="h2 fw-bold my-1 tracking-tight" id="grandTotalDisplay" style="font-size: 2.2rem; color: #e15241 !important;">0 KRW</div>
+        </div>
+        <div class="col-5 col-sm-4 text-end">
+          <div class="sync-status">
+            <span class="sync-dot"></span>
+            <span id="syncText">LIVE</span>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <footer>
-        <p>© 유찬이의 쇼트트랙 기록 대시보드 프로젝트.</p>
-    </footer>
-</div>
+    <div class="net-worth-sub-banner" id="netWorthBanner">
+      <span>👪 우리 가족 순자산 (자산 - 부채)</span>
+      <span class="text-white" id="netWorthDisplay">0 KRW</span>
+    </div>
 
-<script>
-    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSKW2Np5p8qrOwLlea_eIf16PM5vMeuW3WvC2KQ2TY-5vLBLKMHdkigI9mfEFHku3N_w6RbDV35r9wi/pub?gid=166948240&single=true&output=csv';
-    const targetGoalSeconds = 47.500; 
-    document.getElementById('goalTimeDisplay').innerText = targetGoalSeconds.toFixed(3) + '초';
+    <div class="section-title mb-2">📊 보유 항목별 요약</div>
+    <div class="summary-grid" id="summaryContainer"></div>
 
-    let activeCharts = {};
-    let allOriginalRows = [];
-    let globalBestTimes = {};
+    <div class="filter-sort-row">
+      <div class="section-title">🔍 자산별 상세 보유내역</div>
+      <div class="filter-tabs" id="subFilterTabs"></div>
+      <div>
+        <select class="form-select sort-select" id="sortSelect" onchange="sortData()">
+          <option value="default">기본 순 정렬</option>
+          <option value="high">금액 높은 순</option>
+          <option value="low">금액 낮은 순</option>
+        </select>
+      </div>
+    </div>
 
-    function parseCSV(text) {
-        let r = []; let q = false; let row = ['']; let cleanText = text.replace(/\r/g, '');
-        for (let i = 0; i < cleanText.length; i++) {
-            let c = cleanText[i];
-            if (c === '"') { q = !q; } 
-            else if (c === ',' && !q) { row.push(''); } 
-            else if (c === '\n' && !q) { r.push(row.map(v => v.trim())); row = ['']; } 
-            else { row[row.length - 1] += c; }
-        }
-        if (row.length > 1 || row[0] !== '') { r.push(row.map(v => v.trim())); }
-        return r;
+    <div class="table-container">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th id="thName">자산명</th>
+              <th>구분</th>
+              <th class="text-end" id="thAmount">보유금액(KRW)</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const MY_SECRET_URL = "https://script.google.com/macros/s/AKfycbwD9K7Z112cZNMYLpYw0PeblKg_Z8U1nOi47kxtSgmtDcXzEnfgnMRyG6tRR3oBF4U/exec"; 
+
+    let rawServerData = null; 
+    let currentTabKey = 'sheet1'; 
+    let currentAssetList = []; 
+    let currentCategoryFilter = '전체';
+
+    let sheet1GrandTotalSum = 0; 
+    let globalOurAssetSum = 0;
+    let globalDebtSum = 0;
+
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    // 🔄 자동 새로고침 타이머 변수
+    let autoRefreshInterval = null; 
+
+    async function verifyPassword() {
+      const password = document.getElementById("passwordInput").value;
+      const errorDiv = document.getElementById("lockError");
+      
+      if (password === "1235") {
+        errorDiv.classList.add('d-none');
+        document.getElementById("lockScreen").classList.add('d-none');
+        document.getElementById("mainDashboard").classList.remove('d-none');
+        await loadServerData();
+        initSwipeGesture();
+        
+        // 🛠️ [고도화] 암호 통과 직후 백그라운드 5분 타이머 작동 격발 (5분 = 300,000ms)
+        startAutoRefreshTimer(300000);
+      } else {
+        errorDiv.classList.remove('d-none');
+      }
     }
 
-    function secondsToTimeString(seconds) {
-        if (!seconds || isNaN(seconds)) return '';
-        if (seconds >= 60) {
-            const mins = Math.floor(seconds / 60);
-            const secs = (seconds % 60).toFixed(3);
-            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-        }
-        return seconds.toFixed(3) + '초';
-    }
-
-    function formatRecordString(str) {
-        if(!str) return '-';
-        const num = timeToSeconds(str);
-        if(!num || isNaN(num)) return str;
-        return secondsToTimeString(num);
-    }
-
-    function cleanTournamentName(name) {
-        if(!name) return '-';
-        return name.replace(/제|회|쇼트트랙|스피드스케이팅|대회/g, '').trim();
-    }
-
-    function timeToSeconds(timeStr) {
-        if (!timeStr) return null;
-        if (timeStr.includes(':')) {
-            const parts = timeStr.split(':');
-            return parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
-        }
-        return parseFloat(timeStr);
-    }
-
-    async function loadSheetData() {
+    // 🛠️ [신규] 5분마다 무자각 데이터를 호출해 맵핑해주는 인터벌 루프 함수
+    function startAutoRefreshTimer(ms) {
+      if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+      autoRefreshInterval = setInterval(async () => {
+        const syncText = document.getElementById("syncText");
         try {
-            globalBestTimes = {};
-
-            const response = await fetch(sheetUrl + '&cachebust=' + new Date().getTime());
-            const csvText = await response.text();
-            const data = parseCSV(csvText);
-
-            allOriginalRows = data.slice(1).filter(row => row.length >= 5 && row[0] !== "");
-
-            if(allOriginalRows.length === 0) {
-                document.getElementById('groupContainer').innerHTML = '<div style="text-align:center; padding:20px;">시트 데이터가 비어있습니다.</div>';
-                return;
-            }
-
-            let datasets = {};
-            let pbObjects = {};
-
-            allOriginalRows.forEach(row => {
-                const date = row[0];
-                const tournament = row[1];
-                const eventType = row[3] ? row[3].trim().toUpperCase() : '';
-                const record = row[4];
-                const sec = timeToSeconds(record);
-
-                if (!eventType || !sec) return;
-
-                if (!globalBestTimes[eventType] || sec < globalBestTimes[eventType]) {
-                    globalBestTimes[eventType] = sec;
-                    pbObjects[eventType] = { record, tournament, date };
-                }
-
-                if (!datasets[eventType]) datasets[eventType] = [];
-                datasets[eventType].push({ date, tournament, sec });
-            });
-
-            document.getElementById('pb333').innerText = formatRecordString(pbObjects['333M']?.record || pbObjects['333m']?.record);
-            document.getElementById('pb333Details').innerHTML = pbObjects['333M'] ? `🏆 ${cleanTournamentName(pbObjects['333M'].tournament)}` : '기록 없음';
-
-            const best500 = globalBestTimes['500M'] || globalBestTimes['500m'];
-            document.getElementById('pb500').innerText = secondsToTimeString(best500) || '-';
-            document.getElementById('pb500Details').innerHTML = pbObjects['500M'] ? `🏆 ${cleanTournamentName(pbObjects['500M'].tournament)}` : '기록 없음';
-            
-            if (best500) {
-                const remaining = (best500 - targetGoalSeconds).toFixed(3);
-                const progressPercent = Math.min(100, Math.max(0, ((63.180 - best500) / (63.180 - targetGoalSeconds)) * 100));
-                document.getElementById('progressBar').style.width = `${progressPercent}%`;
-
-                if (remaining <= 0) {
-                    document.getElementById('goalCalculated').innerHTML = '🎉 목표 초과 달성! 신기록 갱신! 🎉';
-                } else {
-                    document.getElementById('goalCalculated').innerHTML = `🔥 목표까지 단 <strong>${remaining}초</strong>! (${Math.round(progressPercent)}%)`;
-                }
-            }
-            
-            const uniqueTournaments = new Set(allOriginalRows.map(r => `${r[0]}_${r[1]}`)); 
-            document.getElementById('totalRaces').innerText = uniqueTournaments.size + '개 대회 출전';
-
-            const tabMenuContainer = document.getElementById('dynamicTabMenu');
-            const uniqueEvents = Object.keys(globalBestTimes).sort();
-            let tabHtml = `<button id="btn-all" class="tab-btn active" onclick="filterTable('all')">전체보기</button>`;
-            uniqueEvents.forEach(evt => {
-                tabHtml += `<button id="btn-${evt}" class="tab-btn" onclick="filterTable('${evt}')">${evt}</button>`;
-            });
-            tabMenuContainer.innerHTML = tabHtml;
-
-            const chartsGrid = document.getElementById('dynamicChartsGrid');
-            chartsGrid.innerHTML = '';
-            
-            const mainEvents = uniqueEvents.filter(e => e.includes('333') || e.includes('500'));
-            mainEvents.forEach(evt => {
-                const chartSec = document.createElement('div');
-                chartSec.className = 'chart-section';
-                chartSec.innerHTML = `<h2>📈 ${evt} 대회별 최고기록 추이</h2><canvas id="canvas-${evt}"></canvas>`;
-                chartsGrid.appendChild(chartSec);
-
-                // 💡 [핵심 알고리즘 수정] 동일 대회 그룹핑 후 각 대회별 '최고 기록(최소 초수)' 1개만 추출
-                let tourGroupMap = {};
-                datasets[evt].forEach(item => {
-                    const groupKey = `${item.date}_${item.tournament}`;
-                    if (!tourGroupMap[groupKey] || item.sec < tourGroupMap[groupKey].sec) {
-                        tourGroupMap[groupKey] = item;
-                    }
-                });
-
-                // 추출한 대회 최고기록 리스트를 과거 날짜 순으로 정렬
-                let filteredChartData = Object.values(tourGroupMap).sort((a,b) => new Date(a.date) - new Date(b.date));
-                
-                // 가로축 라벨을 날짜 대신 정제된 '대회명'으로 맵핑
-                let chartLabels = filteredChartData.map(d => cleanTournamentName(d.tournament));
-                let chartValues = filteredChartData.map(d => d.sec);
-
-                let color = evt.includes('333') ? '#ff7a00' : '#00b4d8';
-                let bg = evt.includes('333') ? 'rgba(255, 122, 0, 0.04)' : 'rgba(0, 180, 216, 0.04)';
-                
-                renderChart(`canvas-${evt}`, chartLabels, chartValues, color, bg, evt);
-            });
-
-            renderGroupedCards(allOriginalRows);
-
-        } catch (error) {
-            console.error(error);
-            document.getElementById('groupContainer').innerHTML = '<div style="text-align:center; color:red; padding:20px;">구글 시트 연동 실패</div>';
+          syncText.innerText = "SYNCING...";
+          syncText.style.color = "#418df1";
+          
+          const response = await fetch(MY_SECRET_URL + "?_=" + new Date().getTime());
+          rawServerData = await response.json();
+          
+          calculateAdvancedBalance();
+          processAndRenderData(); // 현재 보고 있는 탭 화면 리렌더링
+          
+          syncText.innerText = "LIVE";
+          syncText.style.color = "#00e676";
+        } catch (e) {
+          syncText.innerText = "CONN ERROR";
+          syncText.style.color = "#f27263";
         }
+      }, ms);
     }
 
-    function renderGroupedCards(rowsToRender, targetMethod = 'all') {
-        const container = document.getElementById('groupContainer');
-        container.innerHTML = '';
+    function initSwipeGesture() {
+      const dashboard = document.getElementById("mainDashboard");
+      
+      dashboard.addEventListener('touchstart', (e) => {
+        if (e.target.closest('select') || e.target.closest('.table-responsive')) return;
+        touchStartX = e.changedTouches[0].screenX;
+      }, { passive: true });
 
-        let raceHistoryTracker = {}; 
-        let crossTournamentTracker = {}; 
-        let computedDiffs = new Map(); 
-
-        rowsToRender.forEach((row, globalIdx) => {
-            const [date, tournament, venueLink, eventType, record] = row;
-            const upperEvent = eventType ? eventType.trim().toUpperCase() : '';
-            const sec = timeToSeconds(record);
-            const matchKey = `${date}_${tournament}`; 
-
-            if(!upperEvent || !sec) return;
-
-            if(!raceHistoryTracker[matchKey]) raceHistoryTracker[matchKey] = {};
-            
-            if(raceHistoryTracker[matchKey][upperEvent] !== undefined) {
-                const prevSec = raceHistoryTracker[matchKey][upperEvent].sec;
-                const diff = (sec - prevSec).toFixed(3);
-                computedDiffs.set(globalIdx, { diff, targetName: '이전 라운드' });
-            } 
-            else if(crossTournamentTracker[upperEvent] !== undefined) {
-                const prevSec = crossTournamentTracker[upperEvent].sec;
-                const prevTour = crossTournamentTracker[upperEvent].tournament;
-                const diff = (sec - prevSec).toFixed(3);
-                computedDiffs.set(globalIdx, { diff, targetName: cleanTournamentName(prevTour) });
-            }
-            
-            raceHistoryTracker[matchKey][upperEvent] = { sec, tournament };
-            crossTournamentTracker[upperEvent] = { sec, tournament };
-        });
-
-        const groups = {};
-        const reversedRows = [...rowsToRender].reverse();
-
-        reversedRows.forEach((row, revIdx) => {
-            const originalGlobalIdx = rowsToRender.length - 1 - revIdx;
-            const [date, tournament, venueLink, eventType, record, rank, note] = row;
-            const upperEvent = eventType ? eventType.trim().toUpperCase() : '';
-            
-            if (targetMethod !== 'all' && upperEvent !== targetMethod) return;
-
-            const groupKey = `${date}_${tournament}`;
-
-            if (!groups[groupKey]) {
-                groups[groupKey] = { tournament, date, venueLink, items: [] };
-            }
-
-            const savedDiffObj = computedDiffs.get(originalGlobalIdx);
-
-            groups[groupKey].items.push({ 
-                eventType: upperEvent, 
-                record, 
-                rank, 
-                note,
-                diff: savedDiffObj ? savedDiffObj.diff : undefined,
-                targetName: savedDiffObj ? savedDiffObj.targetName : undefined
-            });
-        });
-
-        const sortedGroups = Object.values(groups).sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        if(sortedGroups.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:30px; color:#a0aec0; font-size:12px;">경기 기록이 존재하지 않습니다.</div>';
-            return;
-        }
-
-        sortedGroups.forEach(group => {
-            const groupCard = document.createElement('div');
-            groupCard.className = 'tournament-group-card';
-
-            let venueHtml = '';
-            if (group.venueLink) {
-                if (group.venueLink.startsWith('http') || group.venueLink.startsWith('https')) {
-                    venueHtml = `<a href="${group.venueLink}" target="_blank" class="group-venue-link">🗺️ 링크장 지도</a>`;
-                } else {
-                    venueHtml = `<span class="group-venue-text">(${group.venueLink})</span>`;
-                }
-            }
-
-            let cardHtml = `
-                <div class="group-header">
-                    <div class="group-title">
-                        <div class="group-name-wrapper">
-                            <span class="group-name">${group.tournament}</span>
-                            ${venueHtml}
-                        </div>
-                        <span class="group-date">${group.date || '-'}</span>
-                    </div>
-                </div>
-            `;
-
-            group.items.forEach(item => {
-                const sec = timeToSeconds(item.record);
-                let badgeClass = 'e-multi';
-                if(item.eventType.includes('333')) badgeClass = 'e333';
-                else if(item.eventType.includes('500')) badgeClass = 'e500';
-                
-                let isPB = (sec && sec === globalBestTimes[item.eventType]);
-
-                let rankText = item.rank || '-';
-                if (item.rank && item.rank.includes('1')) rankText = '🥇 ' + item.rank;
-                else if (item.rank && item.rank.includes('2')) rankText = '🥈 ' + item.rank;
-                else if (item.rank && item.rank.includes('3')) rankText = '🥉 ' + item.rank;
-
-                let diffHtml = '';
-                if (item.diff !== undefined) {
-                    const diffNum = parseFloat(item.diff);
-                    if (diffNum < 0) {
-                        diffHtml = `
-                            <div class="diff-container">
-                                <span class="diff-badge better">단축 ${Math.abs(diffNum).toFixed(3)}초 ▲</span>
-                                <span class="diff-target-info">vs ${item.targetName}</span>
-                            </div>
-                        `;
-                    } else if (diffNum > 0) {
-                        diffHtml = `
-                            <div class="diff-container">
-                                <span class="diff-badge worse">+${diffNum.toFixed(3)}초 ▼</span>
-                                <span class="diff-target-info">vs ${item.targetName}</span>
-                            </div>
-                        `;
-                    }
-                }
-
-                cardHtml += `
-                    <div class="group-record-item">
-                        <div class="item-top">
-                            <div class="item-meta">
-                                <span class="event-badge ${badgeClass}">${item.eventType}</span>
-                                ${isPB ? '<span class="pb-badge">⭐ PB</span>' : ''}
-                                ${diffHtml}
-                            </div>
-                            <div class="item-rank">${rankText}</div>
-                        </div>
-                        <div class="item-record">${formatRecordString(item.record)}</div>
-                        ${item.note ? `<div class="item-note">💡 ${item.note}</div>` : ''}
-                    </div>
-                `;
-            });
-
-            groupCard.innerHTML = cardHtml;
-            container.appendChild(groupCard);
-        });
+      dashboard.addEventListener('touchend', (e) => {
+        if (e.target.closest('select') || e.target.closest('.table-responsive')) return;
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipeAction();
+      }, { passive: true });
     }
 
-    function filterTable(filterType) {
-        const btns = document.querySelectorAll('.tab-btn');
-        btns.forEach(btn => btn.classList.remove('active'));
+    function handleSwipeAction() {
+      const swipeDistance = touchEndX - touchStartX;
+      const swipeThreshold = 80;
+
+      if (Math.abs(swipeDistance) > swipeThreshold) {
+        if (swipeDistance > 0) { 
+          if (currentTabKey === 'sheet2') switchMainTab('sheet1');
+          else if (currentTabKey === 'sheet3') switchMainTab('sheet2');
+        } else { 
+          if (currentTabKey === 'sheet1') switchMainTab('sheet2');
+          else if (currentTabKey === 'sheet2') switchMainTab('sheet3');
+        }
+      }
+    }
+
+    function parseToNumber(val) {
+      if(val === null || val === undefined) return 0;
+      const strVal = val.toString().replace(/[^0-9.-]/g, ''); 
+      if (strVal === '') return 0;
+      const num = Number(strVal);
+      return isNaN(num) ? 0 : num;
+    }
+
+    async function loadServerData() {
+      try {
+        const response = await fetch(MY_SECRET_URL + "?_=" + new Date().getTime());
+        rawServerData = await response.json();
         
-        const activeBtn = document.getElementById(`btn-${filterType}`);
-        if(activeBtn) activeBtn.classList.add('active');
-
-        if(filterType === 'all') {
-            renderGroupedCards(allOriginalRows, 'all');
-        } else {
-            renderGroupedCards(allOriginalRows, filterType);
-        }
+        calculateAdvancedBalance();
+        switchMainTab('sheet1');
+      } catch (error) {
+        document.getElementById("tableBody").innerHTML = `<tr><td colspan="3" class="text-center text-danger py-5">⚠️ 데이터 동기화 실패 또는 연동 오류</td></tr>`;
+      }
     }
 
-    function renderChart(canvasId, labels, data, themeColor, bgColor, evtKey) {
-        const ctx = document.getElementById(canvasId).getContext('2d');
-        if (activeCharts[evtKey]) activeCharts[evtKey].destroy();
-        
-        const isMobile = window.innerWidth < 500;
+    function calculateAdvancedBalance() {
+      sheet1GrandTotalSum = 0;
+      globalOurAssetSum = 0;
+      globalDebtSum = 0;
 
-        activeCharts[evtKey] = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: data,
-                    borderColor: themeColor,
-                    backgroundColor: bgColor,
-                    borderWidth: 3,
-                    pointRadius: 5,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: themeColor,
-                    pointBorderWidth: 2.5,
-                    tension: 0.15,
-                    fill: true
-                }]
-            },
-            plugins: [ChartDataLabels],
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                aspectRatio: isMobile ? 1.6 : 2.5,
-                layout: { padding: { top: 24, left: 8, right: 12, bottom: 12 } },
-                scales: {
-                    y: { display: false, grid: { display: false } },
-                    x: { 
-                        grid: { display: false }, 
-                        ticks: { 
-                            font: { size: isMobile ? 9 : 10, weight: '700' }, 
-                            color: '#64748b',
-                            maxRotation: isMobile ? 45 : 30, // 💡 모바일 환경에서 겹침 현상 예방용 라벨 회전 설정
-                            minRotation: isMobile ? 45 : 0
-                        } 
-                    }
-                },
-                plugins: {
-                    legend: { display: false },
-                    datalabels: {
-                        align: 'top', anchor: 'end',
-                        backgroundColor: themeColor, borderRadius: 6, color: 'white',
-                        font: { size: isMobile ? 10 : 11, weight: 'bold' },
-                        formatter: function(value) { return value.toFixed(3); },
-                        padding: { top: 4, bottom: 4, left: 6, right: 6 },
-                        shadowBlur: 4, shadowColor: 'rgba(0,0,0,0.15)'
-                    }
-                }
-            }
+      if (rawServerData.sheet1?.table?.rows) {
+        rawServerData.sheet1.table.rows.forEach(r => {
+          const amt = parseToNumber(r.c[2]?.v);
+          const name = r.c[0]?.v?.toString() || '';
+          if (!name.includes('계') && name !== '자산' && name !== '') sheet1GrandTotalSum += amt;
         });
+      }
+
+      globalOurAssetSum += sheet1GrandTotalSum; 
+      if (rawServerData.sheet2?.table?.rows) {
+        rawServerData.sheet2.table.rows.forEach(r => {
+          const amt = parseToNumber(r.c[2]?.v);
+          const name = r.c[0]?.v?.toString() || '';
+          if (!name.includes('계') && name !== '자산' && name !== '') globalOurAssetSum += amt;
+        });
+      }
+
+      if (rawServerData.sheet3?.table?.rows) {
+        rawServerData.sheet3.table.rows.forEach(r => {
+          const amt = parseToNumber(r.c[2]?.v);
+          const name = r.c[0]?.v?.toString() || '';
+          if (!name.includes('계') && name !== '부채' && name !== '') globalDebtSum += amt;
+        });
+      }
+
+      const netWorth = globalOurAssetSum - globalDebtSum;
+      document.getElementById("netWorthDisplay").innerText = netWorth.toLocaleString('ko-KR') + " KRW";
     }
 
-    const mainContainer = document.getElementById('mainContainer');
-    const ptrIndicator = document.getElementById('ptrIndicator');
-    let startY = 0; let currentY = 0; let isPulling = false;
+    function switchMainTab(tabKey) {
+      currentTabKey = tabKey;
+      currentCategoryFilter = '전체';
+      
+      const tabs = document.querySelectorAll('#mainNavTabs .nav-tab-btn');
+      tabs.forEach(t => t.classList.remove('active'));
+      if (tabKey === 'sheet1') tabs[0].classList.add('active');
+      else if (tabKey === 'sheet2') tabs[1].classList.add('active');
+      else if (tabKey === 'sheet3') tabs[2].classList.add('active');
 
-    window.addEventListener('touchstart', (e) => {
-        if (window.scrollY === 0) { startY = e.touches[0].pageY; isPulling = true; }
-    }, { passive: true });
+      if (tabKey === 'sheet1') {
+        document.getElementById("totalBannerTitle").innerText = "나의 총 보유자산";
+        document.getElementById("thName").innerText = "자산명";
+        document.getElementById("thAmount").innerText = "보유금액(KRW)";
+        document.getElementById("netWorthBanner").classList.remove('d-none');
+      } else if (tabKey === 'sheet2') {
+        document.getElementById("totalBannerTitle").innerText = "공동 및 배우자 총 자산";
+        document.getElementById("thName").innerText = "자산명";
+        document.getElementById("thAmount").innerText = "보유금액(KRW)";
+        document.getElementById("netWorthBanner").classList.remove('d-none');
+      } else {
+        document.getElementById("totalBannerTitle").innerText = "우리 가족 총 부채";
+        document.getElementById("thName").innerText = "부채명";
+        document.getElementById("thAmount").innerText = "대출잔액(KRW)";
+        document.getElementById("netWorthBanner").classList.add('d-none'); 
+      }
 
-    window.addEventListener('touchmove', (e) => {
-        if (!isPulling) return;
-        currentY = e.touches[0].pageY;
-        const diff = currentY - startY;
-        if (diff > 0 && diff < 80) {
-            mainContainer.style.transform = `translateY(${diff}px)`;
-            ptrIndicator.style.opacity = diff / 80;
-            ptrIndicator.style.transform = `translateY(${diff}px)`;
+      processAndRenderData();
+    }
+
+    function processAndRenderData() {
+      if (!rawServerData || !rawServerData[currentTabKey]) return;
+      
+      let rows = rawServerData[currentTabKey].table?.rows || [];
+      currentAssetList = [];
+
+      let targetCategories = [];
+      const summaryMap = {};
+
+      if (currentTabKey === 'sheet1') {
+        targetCategories = ['투자', '예금', '보험', '연금'];
+      } else if (currentTabKey === 'sheet2') {
+        targetCategories = ['유동자산', '비유동자산'];
+      } else {
+        targetCategories = ['유동부채', '비유동부채']; 
+      }
+      targetCategories.forEach(cat => summaryMap[cat] = 0);
+
+      let otherTotal = 0;
+      let grandTotal = 0;
+      const uniqueCategories = new Set();
+
+      let blendedRows = [...rows];
+      if (currentTabKey === 'sheet2' && sheet1GrandTotalSum > 0) {
+        blendedRows.unshift({
+          c: [
+            { v: "나의 자산 (MY ASSET 총액)" },
+            { v: "유동자산" },
+            { v: sheet1GrandTotalSum },
+            { v: "" }
+          ]
+        });
+      }
+
+      for (let i = 0; i < blendedRows.length; i++) {
+        if (!blendedRows[i] || !blendedRows[i].c) continue;
+        const cells = blendedRows[i].c;
+
+        const assetVal = cells[0]?.v ? cells[0].v.toString().trim() : '';
+        const categoryVal = cells[1]?.v ? cells[1].v.toString().trim() : '';
+        const amountNum = parseToNumber(cells[2]?.v);
+        
+        let rateVal = '';
+        if (cells[3] && cells[3].v !== null && cells[3].v !== undefined) {
+          rateVal = cells[3].v.toString().trim();
         }
-    }, { passive: true });
 
-    window.addEventListener('touchend', async () => {
-        if (!isPulling) return;
-        isPulling = false; const diff = currentY - startY;
-        if (diff >= 50) {
-            ptrIndicator.innerText = "⚡ 실시간 데이터 동기화 중...";
-            mainContainer.style.transform = 'translateY(40px)';
-            ptrIndicator.style.transform = 'translateY(40px)';
-            await loadSheetData();
-            ptrIndicator.innerText = "✅ 동기화 완료!";
-            setTimeout(() => {
-                mainContainer.style.transform = 'none'; ptrIndicator.style.transform = 'none';
-                ptrIndicator.style.opacity = '0'; ptrIndicator.innerText = "🔄 당겨서 데이터 동기화 시작...";
-            }, 600);
+        if (
+          assetVal === '자산' || categoryVal === '구분' || assetVal === '' || 
+          assetVal.includes('계') || categoryVal.includes('계') || assetVal === '부채'
+        ) {
+          continue; 
+        }
+
+        grandTotal += amountNum;
+        if (categoryVal !== '') uniqueCategories.add(categoryVal);
+
+        if (targetCategories.includes(categoryVal)) {
+          summaryMap[categoryVal] += amountNum;
         } else {
-            mainContainer.style.transform = 'none'; ptrIndicator.style.transform = 'none'; ptrIndicator.style.opacity = '0';
+          otherTotal += amountNum;
         }
-        startY = 0; currentY = 0;
-    });
 
-    window.onload = loadSheetData;
-</script>
+        currentAssetList.push({
+          asset: assetVal,
+          category: categoryVal !== '' ? categoryVal : '기타',
+          amount: amountNum,
+          rate: rateVal, 
+          formattedAmount: amountNum.toLocaleString('ko-KR') + ' KRW'
+        });
+      }
 
+      document.getElementById("grandTotalDisplay").innerHTML = `${grandTotal.toLocaleString('ko-KR')}<span class="fs-4 fw-normal" style="color: #9aa5b5 !important;"> KRW</span>`;
+
+      let summaryHTML = '';
+      targetCategories.forEach(category => {
+        const totalVal = summaryMap[category] || 0;
+        const percentage = grandTotal > 0 ? ((totalVal / grandTotal) * 100).toFixed(1) : 0;
+        summaryHTML += `
+          <div class="grid-item accent-${category}">
+            <div class="title">${category}</div>
+            <div class="amount">${totalVal.toLocaleString('ko-KR')}<span class="percent">${percentage}%</span></div>
+          </div>
+        `;
+      });
+
+      if (otherTotal > 0) {
+        const otherPercentage = grandTotal > 0 ? ((otherTotal / grandTotal) * 100).toFixed(1) : 0;
+        const otherLabel = currentTabKey === 'sheet3' ? '기타 부채' : '기타 자산';
+        const accentClass = currentTabKey === 'sheet3' ? 'accent-기타부채' : 'accent-기타자산';
+        summaryHTML += `
+          <div class="grid-item ${accentClass}">
+            <div class="title">${otherLabel}</div>
+            <div class="amount">${otherTotal.toLocaleString('ko-KR')}<span class="percent">${otherPercentage}%</span></div>
+          </div>
+        `;
+      }
+      document.getElementById("summaryContainer").innerHTML = summaryHTML;
+
+      let filterHTML = `<button class="filter-btn active" onclick="filterCategory('전체')">전체</button>`;
+      uniqueCategories.forEach(cat => {
+        filterHTML += `<button class="filter-btn" onclick="filterCategory('${cat}')">${cat}</button>`;
+      });
+      document.getElementById("subFilterTabs").innerHTML = filterHTML;
+
+      renderTable();
+    }
+
+    function renderTable() {
+      let filteredList = currentAssetList;
+      if (currentCategoryFilter !== '전체') {
+        filteredList = currentAssetList.filter(item => item.category === currentCategoryFilter);
+      }
+
+      const sortType = document.getElementById("sortSelect").value;
+      if (sortType === 'high') filteredList.sort((a, b) => b.amount - a.amount);
+      else if (sortType === 'low') filteredList.sort((a, b) => a.amount - b.amount);
+
+      let bodyHTML = '';
+      filteredList.forEach(item => {
+        const coreCategories = ['투자', '예금', '보험', '연금', '유동자산', '비유동자산', '유동부채', '비유동부채'];
+        const badgeClass = coreCategories.includes(item.category) ? `badge-${item.category}` : 'badge-기타';
+
+        let rateDisplay = '';
+        if (currentTabKey === 'sheet3' && item.rate !== '') {
+          rateDisplay = `<span class="rate-text">(${item.rate}%)</span>`;
+        }
+
+        bodyHTML += '<tr>';
+        bodyHTML += `<td class="fw-semibold text-white text-wrap" style="white-space: normal; min-width: 120px;">${item.asset}${rateDisplay}</td>`; 
+        bodyHTML += `<td><span class="badge-asset ${badgeClass}">${item.category}</span></td>`;
+        bodyHTML += `<td class="text-end fw-bold text-white">${item.formattedAmount}</td>`;
+        bodyHTML += '</tr>';
+      });
+
+      document.getElementById("tableBody").innerHTML = bodyHTML || `<tr><td colspan="3" class="text-center py-4" style="color:#9aa5b5;">내역이 없습니다.</td></tr>`;
+    }
+
+    function filterCategory(category) {
+      currentCategoryFilter = category;
+      const buttons = document.querySelectorAll('#subFilterTabs .filter-btn');
+      buttons.forEach(btn => {
+        if (btn.innerText === category) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
+      renderTable();
+    }
+
+    function sortData() { renderTable(); }
+  </script>
 </body>
 </html>
