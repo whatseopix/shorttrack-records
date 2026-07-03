@@ -138,12 +138,9 @@
         .charts-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 20px; }
         @media (min-width: 768px) { .charts-grid { grid-template-columns: repeat(2, 1fr); } }
         
-        .chart-section { background: var(--card-bg); padding: 14px 8px 14px 4px; padding-top: 20px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01); }
+        /* 💡 레이아웃 밀착: 차트 패딩을 왼쪽 0으로 완전히 압축 고정 */
+        .chart-section { background: var(--card-bg); padding: 14px 10px 14px 0px; padding-top: 20px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01); }
         .chart-section h2 { font-size: 13px; margin-bottom: 12px; color: #334155; text-align: center; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
-        .chart-trend { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 99px; }
-        .chart-trend.better { background: #dcfce7; color: #15803d; }
-        .chart-trend.worse { background: #fee2e2; color: #b91c1c; }
-        .chart-trend.same { background: #f1f5f9; color: #64748b; }
         
         .tab-menu { display: flex; gap: 6px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .tab-btn { background: #e2e8f0; border: none; padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 700; color: #475569; cursor: pointer; transition: all 0.15s ease; white-space: nowrap; }
@@ -180,7 +177,6 @@
         .diff-target-info { font-size: 9px; color: var(--text-muted); font-weight: 600; padding-left: 2px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; max-width: 190px; }
 
         .item-record { font-size: 20px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; }
-        .item-rank { font-size: 13px; font-weight: 800; color: #334155; }
         
         .item-note { font-size: 12px; color: #334155; background: #f8fafc; padding: 8px 12px; border-radius: 8px; margin-top: 2px; border: 1px solid var(--border-color); font-weight: 500; }
 
@@ -229,7 +225,7 @@
     <div class="goal-track-section" id="goalTrackSection" style="display:none;">
         <div class="goal-track-header">
             <span class="goal-track-title">🏁 500m 목표 트랙</span>
-            <span class="goal-track-sub" id="goalTrackSub">최근 기록이 목표선까지 얼마나 가까워졌는지 확인해보세요!</span>
+            <span class="goal-track-sub" id="goalTrackSub">최근 기록이 목표선까지 얼마나 가까워졌인지 확인해보세요!</span>
         </div>
         <svg id="goalTrackSvg" viewBox="0 0 700 110" preserveAspectRatio="xMidYMid meet"></svg>
         <div class="goal-track-progress-row">
@@ -247,18 +243,14 @@
 
     <footer>
         <p>© 유찬이의 쇼트트랙 기록 대시보드 프로젝트.</p>
-        <p class="app-version" id="appVersion">v1.1.0 · 2026.07.03 배포</p>
+        <p class="app-version" id="appVersion">v1.2.0 · 날짜 분리 최적화 완료</p>
     </footer>
 </div>
 
 <script>
-    const APP_VERSION = 'v1.1.0';
+    const APP_VERSION = 'v1.2.0';
     const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSKW2Np5p8qrOwLlea_eIf16PM5vMeuW3WvC2KQ2TY-5vLBLKMHdkigI9mfEFHku3N_w6RbDV35r9wi/pub?gid=166948240&single=true&output=csv';
-    // 사진 파일을 교체해도 브라우저 캐시 때문에 예전 사진이 보이는 문제를 막기 위해,
-    // 페이지를 새로 열 때마다 다른 쿼리값을 붙여서 항상 최신 파일을 가져오게 합니다.
     const CHARACTER_IMG_URL = 'character.png?v=' + Date.now();
-    console.log('유찬이의 쇼트트랙 기록실', APP_VERSION);
-
 
     let activeCharts = {};
     let allOriginalRows = [];
@@ -294,22 +286,21 @@
         return secondsToTimeString(num);
     }
 
-    function cleanTournamentName(name, dateStr) {
-        if(!name) return '-';
+    // 💡 [2행 구조 대동맥 리빌딩] 가로축 글씨 겹침 현상을 원천 차단하기 위해 [대회명, 월.일] 구조의 '배열'을 리턴하도록 전면 교체
+    function getChartLabel2Rows(name, dateStr) {
+        if(!name) return ['-'];
         let cleanName = name.replace(/(?:쇼트트랙|스피드스케이팅)$/g, '').replace(/(?:대회|배|전)$/g, '').trim();
         
-        if (dateStr && dateStr.includes('.')) {
-            const parts = dateStr.split('.');
+        let monthDay = '';
+        const sep = dateStr && dateStr.includes('.') ? '.' : (dateStr && dateStr.includes('-') ? '-' : null);
+        if (sep) {
+            const parts = dateStr.split(sep);
             if (parts.length >= 3) {
-                return `${cleanName} [${parts[1]}.${parts[2]}]`;
-            }
-        } else if (dateStr && dateStr.includes('-')) { 
-            const parts = dateStr.split('-');
-            if (parts.length >= 3) {
-                return `${cleanName} [${parts[1]}.${parts[2]}]`;
+                monthDay = `${parts[1]}.${parts[2]}`;
             }
         }
-        return cleanName;
+        // Chart.js 스펙상 ['줄1', '줄2'] 배열로 리턴하면 자동으로 멀티라인(두 줄) 분리 표출됩니다.
+        return monthDay ? [cleanName, monthDay] : [cleanName];
     }
 
     function cleanListTournamentName(name) {
@@ -407,7 +398,8 @@
 
                 let filteredChartData = Object.values(tourGroupMap).sort((a,b) => new Date(a.date) - new Date(b.date));
                 
-                let chartLabels = filteredChartData.map(d => cleanTournamentName(d.tournament, d.date));
+                // 💡 [2줄 라벨 전환 인자 연동] 날짜 인수를 파싱하여 배열 형태로 라벨을 주입시킵니다.
+                let chartLabels = filteredChartData.map(d => getChartLabel2Rows(d.tournament, d.date));
                 let chartValues = filteredChartData.map(d => d.sec);
                 let chartFullDates = filteredChartData.map(d => d.date); 
 
@@ -445,6 +437,7 @@
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
+    // 목표 트랙 기동 모듈
     function renderGoalTrack(dataPoints, goalTime) {
         const section = document.getElementById('goalTrackSection');
         const svg = document.getElementById('goalTrackSvg');
@@ -458,26 +451,19 @@
         }
         section.style.display = 'block';
 
-        // 최근 최대 5개 경기만 트랙에 표시 (오래된 순 -> 최신 순), 너무 많으면 답답해지므로 5개로 제한
         const points = dataPoints.slice(-5);
-
         const width = 700, height = 110;
         const padLeft = 26, padRight = 26;
         const laneY = 46;
         const usableWidth = width - padLeft - padRight;
 
-        // 체크포인트는 실제 기록값과 무관하게 "동일한 간격"으로 배치해서 겹침을 방지하고,
-        // 실제 목표 대비 진행 정도는 아래의 별도 진행률 바로 표현한다.
-        const slotCount = points.length + 1; // 마지막 슬롯은 결승선(깃발) 여유 공간
+        const slotCount = points.length + 1; 
         const stepX = usableWidth / slotCount;
         const flagX = padLeft + usableWidth;
 
         let svgParts = [];
-
-        // 점선 트랙 레인
         svgParts.push(`<line x1="${padLeft}" y1="${laneY}" x2="${flagX}" y2="${laneY}" class="track-lane" />`);
 
-        // 각 경기 체크포인트
         points.forEach((p, idx) => {
             const isLast = idx === points.length - 1;
             const x = padLeft + stepX * (idx + 1);
@@ -502,13 +488,11 @@
             }
         });
 
-        // 결승선(목표) 깃발
         svgParts.push(`<text x="${flagX}" y="${laneY - 14}" text-anchor="middle" class="track-goal-time">${goalTime.toFixed(3)}초</text>`);
         svgParts.push(`<text x="${flagX}" y="${laneY + 6}" text-anchor="middle" class="track-flag-emoji">🏁</text>`);
 
         svg.innerHTML = svgParts.join('');
 
-        // 진행률(가장 최근 기록이 전체 흐름 중 목표에 얼마나 가까워졌는지) 계산
         const trackWorst = Math.max(...points.map(p => p.sec), goalTime + 0.001);
         const range = Math.max(trackWorst - goalTime, 0.001);
         const lastPoint = points[points.length - 1];
@@ -684,7 +668,7 @@
         }
     }
 
-    // 목표기록선을 점선으로 그려주는 커스텀 플러그인 (chartjs-plugin-annotation 없이 캔버스에 직접 그림)
+    // 커스텀 목표선 가동 플러그인
     const goalLinePlugin = {
         id: 'goalLinePlugin',
         afterDraw(chart) {
@@ -717,7 +701,6 @@
         const ctx = document.getElementById(canvasId).getContext('2d');
         const isMobile = window.innerWidth < 500;
 
-        // 🏆 PB(최고기록) 지점을 찾아서 별 모양으로 강조
         const bestVal = Math.min(...data);
         const pointStyles = data.map(v => v === bestVal ? 'star' : 'circle');
         const pointRadii = data.map(v => v === bestVal ? (isMobile ? 8 : 9) : 5);
@@ -726,7 +709,6 @@
         const pointBorderW = data.map(v => v === bestVal ? 2 : 2.5);
         const labelBg = data.map(v => v === bestVal ? '#f59e0b' : themeColor);
 
-        // y축 범위: 목표기록이 있으면 그 아래까지 살짝 보이도록 범위를 넓혀준다
         let yScaleOptions = { display: false, grid: { display: false } };
         if (goalValue != null) {
             const maxVal = Math.max(...data);
@@ -752,7 +734,6 @@
                     pointBorderWidth: pointBorderW,
                     tension: 0.15,
                     fill: true,
-                    // 🟢🔴 구간별 색상: 직전 기록보다 빨라졌으면 초록, 느려졌으면 빨강
                     segment: {
                         borderColor: (segCtx) => {
                             const y0 = segCtx.p0.parsed.y, y1 = segCtx.p1.parsed.y;
@@ -768,9 +749,8 @@
                 responsive: true,
                 maintainAspectRatio: true,
                 aspectRatio: isMobile ? 1.6 : 2.5,
-                // 💡 [좌우 여백 극대화 개편] left 패딩을 0으로 좁히고 바짝 가동합니다.
-                layout: { padding: { top: 24, left: 6, right: 12, bottom: 12 } },
-                // ✨ 로딩 시 왼쪽에서 오른쪽으로 순서대로 그려지는 애니메이션
+                // 💡 [레이아웃 밀착 고도화] 글자가 두 줄 배치되면서 늘어난 높이 수렴을 위해 패딩값 정합성 핏팅 조정
+                layout: { padding: { top: 24, left: -4, right: 12, bottom: 0 } },
                 animation: {
                     x: {
                         type: 'number', easing: 'linear', duration: 900, from: NaN,
@@ -794,14 +774,15 @@
                     y: yScaleOptions,
                     x: { 
                         grid: { display: false }, 
-                        // 💡 첫 데이터점과 마지막 데이터점이 캔버스 경계 벽면에 빈 여백 없이 수평 고착되도록 바인딩
                         bounds: 'ticks',
                         offset: false,
                         ticks: { 
-                            font: { size: isMobile ? 9 : 10, weight: '700' }, 
+                            // 💡 글씨 회전 현상을 막고 정방향 2줄 수직 고정을 유도하여 측면 팽창(여백 버그)을 완벽 차단
+                            font: { size: isMobile ? 9 : 10.5, weight: '700' }, 
                             color: '#64748b',
-                            maxRotation: isMobile ? 45 : 30, 
-                            minRotation: isMobile ? 45 : 0
+                            maxRotation: 0, 
+                            minRotation: 0,
+                            padding: 6
                         } 
                     }
                 },
