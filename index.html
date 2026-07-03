@@ -82,6 +82,42 @@
         .progress-wrapper { width: 100%; background: #e2e8f0; height: 6px; border-radius: 99px; margin-top: 4px; overflow: hidden; }
         .progress-bar { background: var(--color-goal); height: 100%; width: 0%; transition: width 0.5s ease; }
 
+        /* ===== Goal Race Track ===== */
+        .goal-track-section {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border-radius: 16px;
+            padding: 16px 14px 10px;
+            margin-bottom: 16px;
+            box-shadow: 0 10px 20px -6px rgba(15,23,42,0.35);
+            position: relative;
+            overflow: hidden;
+        }
+        .goal-track-header { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; padding: 0 4px; }
+        .goal-track-title { font-size: 14px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+        .goal-track-sub { font-size: 11px; color: #94a3b8; font-weight: 600; }
+        .goal-track-pct { font-size: 11px; color: #fbbf24; font-weight: 800; }
+        #goalTrackSvg { width: 100%; height: auto; display: block; }
+        
+        .track-lane { stroke: rgba(255,255,255,0.12); stroke-width: 2; stroke-dasharray: 2 6; stroke-linecap: round; }
+        .track-progress-line { stroke: url(#trackGradient); stroke-width: 4; fill: none; stroke-linecap: round; }
+        .track-point-circle { fill: #0f172a; stroke: #fff; stroke-width: 2; }
+        .track-point-circle.is-current { fill: #fbbf24; stroke: #fbbf24; filter: drop-shadow(0 0 4px rgba(251,191,36,0.9)); }
+        .track-point-label { font-size: 9px; font-weight: 700; fill: #cbd5e1; }
+        .track-point-time { font-size: 10px; font-weight: 800; fill: #fff; }
+        .track-point-time.is-current { fill: #fbbf24; }
+        .track-flag-emoji { font-size: 22px; }
+        .track-goal-time { font-size: 11px; font-weight: 800; fill: #fca5a5; }
+        .skater-current {
+            font-size: 24px;
+            transform-box: fill-box;
+            transform-origin: center;
+            animation: skaterGlide 1.1s ease-in-out infinite;
+        }
+        @keyframes skaterGlide {
+            0%, 100% { transform: translateY(0px) rotate(-3deg); }
+            50% { transform: translateY(-5px) rotate(3deg); }
+        }
+
         .charts-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 20px; }
         @media (min-width: 768px) { .charts-grid { grid-template-columns: repeat(2, 1fr); } }
         
@@ -156,13 +192,27 @@
             <h3>🎯 500m 다음목표</h3>
             <div class="time" id="goalTimeDisplay">-</div>
             <div class="details" id="goalCalculated">계산 중...</div>
-            <div class="progress-wrapper"><div class="progress-bar" id="progressBar"></div></div>
         </div>
         <div class="pb-card pb-total">
             <h3>총 출전 대회</h3>
             <div class="time" id="totalRaces" style="color: #475569;">-</div>
             <div class="details" style="text-align: center; font-weight: 700; color: #2563eb;">유찬이 파이팅! 🔥</div>
         </div>
+    </div>
+
+    <div class="goal-track-section" id="goalTrackSection" style="display:none;">
+        <div class="goal-track-header">
+            <span class="goal-track-title">🏁 500m 목표 트랙</span>
+            <span class="goal-track-sub" id="goalTrackSub">최근 기록이 목표선까지 얼마나 가까워졌는지 확인해보세요!</span>
+        </div>
+        <svg id="goalTrackSvg" viewBox="0 0 700 170" preserveAspectRatio="xMidYMid meet">
+            <defs>
+                <linearGradient id="trackGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#00b4d8" />
+                    <stop offset="100%" stop-color="#fbbf24" />
+                </linearGradient>
+            </defs>
+        </svg>
     </div>
 
     <div class="charts-grid" id="dynamicChartsGrid"></div>
@@ -289,10 +339,10 @@
             document.getElementById('pb500').innerText = secondsToTimeString(best500) || '-';
             document.getElementById('pb500Details').innerHTML = pbObjects['500M'] ? `🏆 ${cleanListTournamentName(pbObjects['500M'].tournament)}` : '기록 없음';
             
+            let goalTime500 = null;
             if (best500) {
-                const dynamicallyCalculatedGoal = best500 - 0.500;
-                document.getElementById('goalTimeDisplay').innerText = dynamicallyCalculatedGoal.toFixed(3) + '초';
-                document.getElementById('progressBar').style.width = `75%`;
+                goalTime500 = best500 - 0.500;
+                document.getElementById('goalTimeDisplay').innerText = goalTime500.toFixed(3) + '초';
                 document.getElementById('goalCalculated').innerHTML = `🔥 PB 경신까지 단 <strong>0.500초</strong> 도전!`;
             }
             
@@ -335,6 +385,10 @@
                 let bg = evt.includes('333') ? 'rgba(255, 122, 0, 0.04)' : 'rgba(0, 180, 216, 0.04)';
                 
                 renderChart(`canvas-${evt}`, chartLabels, chartValues, color, bg, evt, chartFullDates);
+
+                if (evt === '500M' || evt === '500m') {
+                    renderGoalTrack(filteredChartData, goalTime500);
+                }
             });
 
             renderGroupedCards(allOriginalRows);
@@ -343,6 +397,77 @@
             console.error(error);
             document.getElementById('groupContainer').innerHTML = '<div style="text-align:center; color:red; padding:20px;">구글 시트 연동 실패</div>';
         }
+    }
+
+    function renderGoalTrack(dataPoints, goalTime) {
+        const section = document.getElementById('goalTrackSection');
+        const svg = document.getElementById('goalTrackSvg');
+        const subEl = document.getElementById('goalTrackSub');
+
+        if (!dataPoints || dataPoints.length === 0 || !goalTime) {
+            section.style.display = 'none';
+            return;
+        }
+        section.style.display = 'block';
+
+        // 최근 최대 6개 경기만 트랙에 표시 (오래된 순 -> 최신 순)
+        const points = dataPoints.slice(-6);
+
+        // 트랙의 시작점(가장 느린 최근 기록)과 도착점(목표기록)을 기준으로 위치 계산
+        const trackWorst = Math.max(...points.map(p => p.sec), goalTime + 0.001);
+        const trackBest = goalTime;
+        const range = Math.max(trackWorst - trackBest, 0.001);
+
+        const width = 700, height = 170;
+        const padLeft = 40, padRight = 70;
+        const laneY = 95;
+        const usableWidth = width - padLeft - padRight;
+
+        function xForSec(sec) {
+            const pct = Math.min(Math.max((trackWorst - sec) / range, 0), 1);
+            return padLeft + pct * usableWidth;
+        }
+
+        // 기존 defs(그라디언트)는 유지하고 나머지만 새로 그림
+        const defs = svg.querySelector('defs').outerHTML;
+        let svgParts = [defs];
+
+        // 점선 트랙 레인
+        svgParts.push(`<line x1="${padLeft}" y1="${laneY}" x2="${width - padRight + 20}" y2="${laneY}" class="track-lane" />`);
+
+        // 실제 개선 흐름을 나타내는 실선 (트랙 진행선)
+        const linePath = points.map(p => `${xForSec(p.sec)},${laneY}`).join(' ');
+        if (points.length > 1) {
+            svgParts.push(`<polyline points="${linePath}" class="track-progress-line" />`);
+        }
+
+        // 각 경기 포인트 마커
+        points.forEach((p, idx) => {
+            const isLast = idx === points.length - 1;
+            const x = xForSec(p.sec);
+            const labelY = idx % 2 === 0 ? laneY - 22 : laneY + 34;
+            const timeLabelY = idx % 2 === 0 ? laneY - 10 : laneY + 22;
+
+            svgParts.push(`<circle cx="${x}" cy="${laneY}" r="${isLast ? 7 : 5}" class="track-point-circle ${isLast ? 'is-current' : ''}" />`);
+            svgParts.push(`<text x="${x}" y="${timeLabelY}" text-anchor="middle" class="track-point-time ${isLast ? 'is-current' : ''}">${p.sec.toFixed(3)}</text>`);
+            svgParts.push(`<text x="${x}" y="${labelY}" text-anchor="middle" class="track-point-label">${cleanTournamentName(p.tournament, p.date)}</text>`);
+
+            if (isLast) {
+                svgParts.push(`<text x="${x}" y="${laneY + 4}" text-anchor="middle" class="skater-current">⛸️</text>`);
+            }
+        });
+
+        // 결승선(목표) 깃발
+        const flagX = width - padRight + 20;
+        svgParts.push(`<text x="${flagX}" y="${laneY + 6}" text-anchor="middle" class="track-flag-emoji">🏁</text>`);
+        svgParts.push(`<text x="${flagX}" y="${laneY - 16}" text-anchor="middle" class="track-goal-time">${goalTime.toFixed(3)}초</text>`);
+
+        svg.innerHTML = svgParts.join('');
+
+        // 진행률 텍스트 업데이트 (가장 최근 기록 기준)
+        const lastPoint = points[points.length - 1];
+        const progressPct = Math.round(Math.min(Math.max((trackWorst - lastPoint.sec) / range, 0), 1) * 100);
+        subEl.innerHTML = `최근 기록 <strong style="color:#fff;">${lastPoint.sec.toFixed(3)}초</strong> 기준, 목표까지 <span class="goal-track-pct">${progressPct}%</span> 달성! 남은 거리 <strong style="color:#fff;">${Math.max(lastPoint.sec - goalTime, 0).toFixed(3)}초</strong>`;
     }
 
     function renderGroupedCards(rowsToRender, targetMethod = 'all') {
